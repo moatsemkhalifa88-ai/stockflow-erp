@@ -43,8 +43,11 @@ export async function createTestDb(options: { seed?: boolean } = {}): Promise<PG
   return db;
 }
 
-/** Inserts an auth user; the on_auth_user_created trigger creates the profile. */
-export async function createUser(db: PGlite, email: string, role: AppRole): Promise<TestUser> {
+/**
+ * Inserts an auth user; the on_auth_user_created trigger creates the profile.
+ * `role` is usually an AppRole; tests may pass any role code that exists in public.roles.
+ */
+export async function createUser(db: PGlite, email: string, role: AppRole | (string & {})): Promise<TestUser> {
   const result = await db.query<{ id: string }>(
     `insert into auth.users (email, raw_app_meta_data, raw_user_meta_data)
      values ($1, jsonb_build_object('role', $2::text), jsonb_build_object('full_name', $1::text))

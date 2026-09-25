@@ -190,7 +190,15 @@ function renderRelations(
   return `{\n${out.join("\n")}\n    }`;
 }
 
-function renderFunctions(functions: FunctionInfo[], enums: Map<string, string[]>): string {
+/** Return type of a function: table rows (e.g. `returns public.stock_movements`) map to that table's Row. */
+function returnTypeToTs(formatted: string, enums: Map<string, string[]>, tableNames: Set<string>): string {
+  if (formatted === "void") return "undefined";
+  const name = formatted.replace(/^public\./, "");
+  if (tableNames.has(name)) return `Database["public"]["Tables"]["${name}"]["Row"]`;
+  return formatTypeToTs(formatted, enums);
+}
+
+function renderFunctions(functions: FunctionInfo[], enums: Map<string, string[]>, tableNames: Set<string>): string {
   if (functions.length === 0) return "{\n      [_ in never]: never\n    }";
   const out = functions.map((fn) => {
     const args = fn.arg_types
@@ -199,7 +207,7 @@ function renderFunctions(functions: FunctionInfo[], enums: Map<string, string[]>
         return `          ${name}${fn.arg_has_default[i] ? "?" : ""}: ${formatTypeToTs(t, enums)}`;
       })
       .join("\n");
-    const ret = fn.return_type === "void" ? "undefined" : formatTypeToTs(fn.return_type, enums);
+    const ret = returnTypeToTs(fn.return_type, enums, tableNames);
     const argsBlock = args ? `{\n${args}\n        }` : "never";
     return `      ${fn.name}: {\n        Args: ${argsBlock}\n        Returns: ${ret}${fn.returns_set ? "[]" : ""}\n      }`;
   });
@@ -236,7 +244,7 @@ export type Database = {
   public: {
     Tables: ${renderRelations(tables, fks, enums, true)}
     Views: ${renderRelations(views, [], enums, false)}
-    Functions: ${renderFunctions(functions, enums)}
+    Functions: ${renderFunctions(functions, enums, new Set(tables.map((c) => c.table_name)))}
     Enums: ${renderEnums(enums)}
     CompositeTypes: {
       [_ in never]: never
@@ -249,6 +257,7 @@ type PublicSchema = Database["public"]
 export type Tables<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Row"]
 export type TablesInsert<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Insert"]
 export type TablesUpdate<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Update"]
+export type Views<T extends keyof PublicSchema["Views"]> = PublicSchema["Views"][T]["Row"]
 export type Enums<T extends keyof PublicSchema["Enums"]> = PublicSchema["Enums"][T]
 
 export const Constants = {

@@ -1,12 +1,15 @@
-import { Boxes, Package, Truck, Users, Warehouse } from "lucide-react";
+import { AlertTriangle, Boxes, CircleX, Package, Truck, Users, Wallet, Warehouse } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { LinkButton } from "@/components/ui/link-button";
 import { getSession } from "@/lib/auth/session";
-import { formatNumber, formatWarehouseType } from "@/lib/format";
+import { listWarehouseSummaries, totalsOf } from "@/lib/data/warehouses";
+import { formatCurrency, formatNumber, formatWarehouseType } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -36,7 +39,9 @@ async function loadDashboard() {
 }
 
 export default async function DashboardPage() {
-  const [session, data] = await Promise.all([getSession(), loadDashboard()]);
+  const [session, data, stock] = await Promise.all([getSession(), loadDashboard(), listWarehouseSummaries()]);
+  const totals = totalsOf(stock);
+  const hasStock = stock.some((w) => w.totalQuantity > 0 || w.lowStockCount + w.outOfStockCount > 0);
   const firstName = session.status === "active" ? session.user.fullName.split(" ")[0] : "";
   const activeWarehouses = data.warehouses.filter((w) => w.is_active);
 
@@ -56,12 +61,29 @@ export default async function DashboardPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader title="Inventory overview" description="Stock levels, value and alerts" />
-          <EmptyState
-            icon={Boxes}
-            title="No stock recorded yet"
-            description="Inventory is built only from audited stock movements — goods receipts, adjustments, sales and transfers. The movement engine arrives in Phase 2."
+          <CardHeader
+            title="Inventory overview"
+            description="Stock levels, value and alerts across all warehouses"
+            action={
+              <LinkButton href="/inventory" variant="ghost" size="sm">
+                View inventory
+              </LinkButton>
+            }
           />
+          {hasStock ? (
+            <CardBody className="grid gap-4 sm:grid-cols-2">
+              <InventoryStat icon={Wallet} label="Inventory value" value={formatCurrency(totals.inventoryValue)} />
+              <InventoryStat icon={Boxes} label="Units on hand" value={formatNumber(totals.totalQuantity)} />
+              <InventoryStat icon={AlertTriangle} label="Low-stock items" value={formatNumber(totals.lowStockCount)} href="/inventory?status=LOW_STOCK" />
+              <InventoryStat icon={CircleX} label="Out-of-stock items" value={formatNumber(totals.outOfStockCount)} href="/inventory?status=OUT_OF_STOCK" />
+            </CardBody>
+          ) : (
+            <EmptyState
+              icon={Boxes}
+              title="No stock recorded yet"
+              description="Inventory is built only from audited stock movements. Post an adjustment or run npm run seed:stock to load opening balances."
+            />
+          )}
         </Card>
 
         <Card>
@@ -90,5 +112,37 @@ export default async function DashboardPage() {
         </Card>
       </div>
     </>
+  );
+}
+
+function InventoryStat({
+  icon: Icon,
+  label,
+  value,
+  href,
+}: {
+  icon: typeof Wallet;
+  label: string;
+  value: string;
+  href?: string;
+}) {
+  const body = (
+    <>
+      <span className="rounded-lg bg-brand-50 p-2">
+        <Icon aria-hidden className="size-5 text-brand-600" />
+      </span>
+      <span>
+        <span className="block text-sm text-slate-500">{label}</span>
+        <span className="block text-xl font-semibold text-slate-900 tabular-nums">{value}</span>
+      </span>
+    </>
+  );
+  const classes = "flex items-center gap-3 rounded-lg border border-slate-100 p-4";
+  return href ? (
+    <Link href={href} className={`${classes} hover:border-brand-200 hover:bg-brand-50/40`}>
+      {body}
+    </Link>
+  ) : (
+    <div className={classes}>{body}</div>
   );
 }

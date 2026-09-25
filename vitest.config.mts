@@ -8,6 +8,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],
+    // Live tests hit a real database and only run via `npm run test:live`.
+    exclude: ["tests/live/**", "node_modules/**"],
     testTimeout: 60_000,
     hookTimeout: 120_000,
   },

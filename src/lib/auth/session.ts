@@ -50,3 +50,9 @@ export const getSession = cache(async (): Promise<SessionState> => {
 
   return user.isActive ? { status: "active", user } : { status: "inactive", user };
 });
+
+/** The signed-in, active user, or null. Server Actions must check this themselves. */
+export async function getActiveUser(): Promise<CurrentUser | null> {
+  const session = await getSession();
+  return session.status === "active" ? session.user : null;
+}

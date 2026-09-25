@@ -10,9 +10,11 @@
     "typecheck": "node node_modules/next/dist/bin/next typegen && node node_modules/typescript/bin/tsc --noEmit",
     "test": "node node_modules/vitest/vitest.mjs run",
     "test:watch": "node node_modules/vitest/vitest.mjs",
+    "test:live": "node node_modules/vitest/vitest.mjs run --config vitest.live.config.mts",
     "check": "npm run typecheck && npm run lint && npm run test",
     "db:types": "node node_modules/tsx/dist/cli.mjs scripts/generate-db-types.ts",
-    "seed:users": "node node_modules/tsx/dist/cli.mjs scripts/seed-users.ts"
+    "seed:users": "node node_modules/tsx/dist/cli.mjs scripts/seed-users.ts",
+    "seed:stock": "node node_modules/tsx/dist/cli.mjs scripts/seed-stock.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -28,11 +30,13 @@
     "@electric-sql/pglite": "^0.5.8",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^22.20.4",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "dotenv": "^18.0.3",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
+    "pg": "^8.23.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",

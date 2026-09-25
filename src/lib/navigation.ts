@@ -45,10 +45,10 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Inventory",
     items: [
-      { label: "Products", href: "/products", icon: Package, roles: EVERYONE, available: false },
-      { label: "Inventory", href: "/inventory", icon: Boxes, roles: EVERYONE, available: false },
-      { label: "Stock Movements", href: "/movements", icon: History, roles: OPERATIONS, available: false },
-      { label: "Warehouses", href: "/warehouses", icon: Warehouse, roles: EVERYONE, available: false },
+      { label: "Products", href: "/products", icon: Package, roles: EVERYONE, available: true },
+      { label: "Inventory", href: "/inventory", icon: Boxes, roles: EVERYONE, available: true },
+      { label: "Stock Movements", href: "/movements", icon: History, roles: OPERATIONS, available: true },
+      { label: "Warehouses", href: "/warehouses", icon: Warehouse, roles: EVERYONE, available: true },
       { label: "Transfers", href: "/transfers", icon: ArrowLeftRight, roles: OPERATIONS, available: false },
     ],
   },

@@ -1159,10 +1159,131 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      inventory_valuation: {
+        Row: {
+          inventory_id: string | null
+          product_id: string | null
+          sku: string | null
+          product_name: string | null
+          unit_of_measure: string | null
+          category_id: string | null
+          category_name: string | null
+          warehouse_id: string | null
+          warehouse_code: string | null
+          warehouse_name: string | null
+          quantity: number | null
+          min_stock_level: number | null
+          cost_price: number | null
+          inventory_value: number | null
+          stock_status: string | null
+          product_is_active: boolean | null
+          warehouse_is_active: boolean | null
+          bin_location: string | null
+          last_movement_at: string | null
+        }
+        Relationships: []
+      }
+      product_stock_summary: {
+        Row: {
+          product_id: string | null
+          sku: string | null
+          name: string | null
+          barcode: string | null
+          unit_of_measure: string | null
+          category_id: string | null
+          category_name: string | null
+          cost_price: number | null
+          sale_price: number | null
+          min_stock_level: number | null
+          reorder_quantity: number | null
+          is_active: boolean | null
+          created_at: string | null
+          updated_at: string | null
+          total_quantity: number | null
+          inventory_value: number | null
+          warehouse_count: number | null
+          stock_status: string | null
+        }
+        Relationships: []
+      }
+      stock_movement_ledger: {
+        Row: {
+          id: string | null
+          movement_number: string | null
+          movement_type: Database["public"]["Enums"]["movement_type"] | null
+          direction: number | null
+          quantity: number | null
+          quantity_change: number | null
+          quantity_before: number | null
+          quantity_after: number | null
+          unit_cost: number | null
+          movement_value: number | null
+          product_id: string | null
+          sku: string | null
+          product_name: string | null
+          warehouse_id: string | null
+          warehouse_code: string | null
+          warehouse_name: string | null
+          reference_type: string | null
+          reference_id: string | null
+          reference_number: string | null
+          reversal_of_id: string | null
+          reversal_of_number: string | null
+          reversed_by_id: string | null
+          reversed_by_number: string | null
+          reason: string | null
+          notes: string | null
+          performed_by: string | null
+          performed_by_name: string | null
+          movement_date: string | null
+          created_at: string | null
+        }
+        Relationships: []
+      }
+      warehouse_stock_summary: {
+        Row: {
+          warehouse_id: string | null
+          code: string | null
+          name: string | null
+          warehouse_type: string | null
+          city: string | null
+          is_active: boolean | null
+          manager_id: string | null
+          manager_name: string | null
+          product_count: number | null
+          total_quantity: number | null
+          inventory_value: number | null
+          low_stock_count: number | null
+          out_of_stock_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      create_stock_movement: {
+        Args: {
+          p_product_id: string
+          p_warehouse_id: string
+          p_movement_type: Database["public"]["Enums"]["movement_type"]
+          p_quantity: number
+          p_reference_type?: string
+          p_reference_id?: string
+          p_reference_number?: string
+          p_reason?: string
+          p_notes?: string
+          p_movement_date?: string
+          p_direction?: number
+          p_unit_cost?: number
+        }
+        Returns: Database["public"]["Tables"]["stock_movements"]["Row"]
+      }
+      reverse_stock_movement: {
+        Args: {
+          p_movement_id: string
+          p_reason: string
+        }
+        Returns: Database["public"]["Tables"]["stock_movements"]["Row"]
+      }
     }
     Enums: {
       movement_type: "PURCHASE_RECEIPT" | "SALE" | "TRANSFER_IN" | "TRANSFER_OUT" | "ADJUSTMENT_IN" | "ADJUSTMENT_OUT" | "RETURN"
@@ -1181,6 +1302,7 @@ type PublicSchema = Database["public"]
 export type Tables<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Row"]
 export type TablesInsert<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Insert"]
 export type TablesUpdate<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Update"]
+export type Views<T extends keyof PublicSchema["Views"]> = PublicSchema["Views"][T]["Row"]
 export type Enums<T extends keyof PublicSchema["Enums"]> = PublicSchema["Enums"][T]
 
 export const Constants = {
