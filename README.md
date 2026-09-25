@@ -126,6 +126,7 @@ Migrations live in [`supabase/migrations`](supabase/migrations) and are applied 
 | `…0500_audit`        | audit triggers on all master data                                                         |
 | `…0600_rls`          | privileges and Row Level Security policies                                                |
 | `…0700_inventory_engine` | `create_stock_movement`, `reverse_stock_movement`, SKU lock, valuation and summary views |
+| `…0800_warehouse_editing_inventory_totals` | warehouse managers maintain warehouses, manager validation, warehouse code lock, `inventory_totals()` |
 
 **Movement types:** `PURCHASE_RECEIPT`, `SALE`, `TRANSFER_IN`, `TRANSFER_OUT`, `ADJUSTMENT_IN`, `ADJUSTMENT_OUT`, `RETURN`.
 
@@ -137,7 +138,7 @@ A full ER diagram will be added in Phase 6.
 | --------------------------------------- | :---: | :---------------: |
 | Read operational data                   |  ✅   |        ✅         |
 | Create / edit products and categories   |  ✅   |        ✅         |
-| Create / edit warehouses                |  ✅   |        –          |
+| Create / edit / deactivate warehouses   |  ✅   |        ✅         |
 | Create / edit suppliers and customers   |  ✅   |        –          |
 | Manage users (profiles, roles)          |  ✅   |        –          |
 | Read the audit log                      |  ✅   |        –          |
@@ -201,7 +202,8 @@ and `reverse_stock_movement` too, so every future module follows the same rules.
 
 **Inventory value** = quantity × product cost price. It is calculated in exactly one place, the
 `inventory_valuation` view. The product, warehouse and dashboard totals all add up rows from that view, so
-the figures always agree. **Stock status:** *Out of Stock* at 0, *Low Stock* at or below the product's
+the figures always agree. The summary cards on the Inventory page come from `inventory_totals()`, which applies the
+same warehouse, category, status and search filters as the list, so the cards always describe the rows shown. **Stock status:** *Out of Stock* at 0, *Low Stock* at or below the product's
 minimum stock level, otherwise *In Stock*.
 
 ## Testing

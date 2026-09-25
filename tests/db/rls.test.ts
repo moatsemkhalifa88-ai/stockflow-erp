@@ -113,17 +113,15 @@ describe("row level security", () => {
       ).rejects.toThrow(/permission denied/);
     });
 
-    it("cannot create suppliers, customers or warehouses", async () => {
+    it("cannot create suppliers or customers", async () => {
       await expect(
         asManager(() => db.query("insert into public.suppliers (code, name) values ('SUP-999', 'Rogue Supplier')")),
       ).rejects.toThrow(/row-level security/);
       await expect(
         asManager(() => db.query("insert into public.customers (code, name) values ('CUS-999', 'Rogue Customer')")),
       ).rejects.toThrow(/row-level security/);
-      await expect(
-        asManager(() => db.query("insert into public.warehouses (code, name, city) values ('WH-X', 'Rogue', 'Nowhere')")),
-      ).rejects.toThrow(/row-level security/);
     });
+    // Warehouse maintenance by managers (since migration 0800) is covered in warehouses.test.ts.
 
     it("cannot change roles or read the audit log", async () => {
       await asManager(async () => {

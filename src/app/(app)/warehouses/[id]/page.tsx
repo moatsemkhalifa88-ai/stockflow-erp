@@ -1,4 +1,4 @@
-import { AlertTriangle, Boxes, History, Package, Wallet } from "lucide-react";
+import { AlertTriangle, Boxes, History, Package, Pencil, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -6,12 +6,17 @@ import { KpiCard } from "@/components/dashboard/kpi-card";
 import { StockStatusBadge } from "@/components/inventory/stock-status-badge";
 import { PageHeader } from "@/components/layout/page-header";
 import { MovementTable } from "@/components/movements/movement-table";
+import { ActivationToggle } from "@/components/ui/activation-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { DescriptionList } from "@/components/ui/description-list";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FlashToast } from "@/components/ui/flash-toast";
 import { LinkButton } from "@/components/ui/link-button";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/table";
+import { setWarehouseActive } from "@/lib/actions/warehouses";
+import { canManageWarehouses } from "@/lib/auth/permissions";
+import { getActiveUser } from "@/lib/auth/session";
 import { getLowStockLines } from "@/lib/data/inventory";
 import { getRecentMovements } from "@/lib/data/movements";
 import { getWarehouse, getWarehouseSummary } from "@/lib/data/warehouses";
@@ -24,25 +29,53 @@ export default async function WarehouseDetailPage({ params }: PageProps<"/wareho
   const { id } = await params;
   if (!isUuid(id)) notFound();
 
-  const [warehouse, summary, lowStock, movements] = await Promise.all([
+  const [warehouse, summary, lowStock, movements, user] = await Promise.all([
     getWarehouse(id),
     getWarehouseSummary(id),
     getLowStockLines(id),
     getRecentMovements({ warehouseId: id }, 15),
+    getActiveUser(),
   ]);
   if (!warehouse || !summary) notFound();
 
   const alertCount = summary.lowStockCount + summary.outOfStockCount;
+  const canEdit = user !== null && canManageWarehouses(user.role);
 
   return (
     <>
+      <FlashToast
+        messages={{
+          created: { title: "Warehouse created", description: warehouse.code, variant: "success" },
+          updated: { title: "Warehouse saved", description: warehouse.code, variant: "success" },
+        }}
+      />
       <PageHeader
         title={warehouse.name}
         description={`${warehouse.code} · ${formatWarehouseType(warehouse.warehouse_type)} · ${warehouse.city}`}
         actions={
-          <LinkButton href={`/inventory?warehouse=${warehouse.id}`} variant="secondary">
-            View inventory
-          </LinkButton>
+          <>
+            <LinkButton href={`/inventory?warehouse=${warehouse.id}`} variant="secondary">
+              View inventory
+            </LinkButton>
+            {canEdit && (
+              <>
+                <ActivationToggle
+                  isActive={warehouse.is_active}
+                  onChange={setWarehouseActive.bind(null, warehouse.id)}
+                  entityLabel="Warehouse"
+                  deactivateWarning={
+                    summary.totalQuantity > 0
+                      ? `${formatNumber(summary.totalQuantity)} units are still here. They can be shipped or written off, but nothing new can be received.`
+                      : "The warehouse will no longer receive stock. History is kept."
+                  }
+                />
+                <LinkButton href={`/warehouses/${warehouse.id}/edit`} variant="secondary">
+                  <Pencil aria-hidden className="size-4" />
+                  Edit
+                </LinkButton>
+              </>
+            )}
+          </>
         }
       />
       {!warehouse.is_active && (

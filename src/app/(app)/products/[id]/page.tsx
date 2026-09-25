@@ -6,7 +6,7 @@ import { KpiCard } from "@/components/dashboard/kpi-card";
 import { StockStatusBadge } from "@/components/inventory/stock-status-badge";
 import { PageHeader } from "@/components/layout/page-header";
 import { MovementTable } from "@/components/movements/movement-table";
-import { ProductStatusActions } from "@/components/products/product-status-actions";
+import { ActivationToggle } from "@/components/ui/activation-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { DescriptionList } from "@/components/ui/description-list";
@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FlashToast } from "@/components/ui/flash-toast";
 import { LinkButton } from "@/components/ui/link-button";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/table";
+import { setProductActive } from "@/lib/actions/products";
 import { canManageProducts, canMoveStock } from "@/lib/auth/permissions";
 import { getActiveUser } from "@/lib/auth/session";
 import { getStockByWarehouse } from "@/lib/data/inventory";
@@ -61,7 +62,16 @@ export default async function ProductDetailPage({ params }: PageProps<"/products
         actions={
           canEdit ? (
             <>
-              <ProductStatusActions productId={product.id} isActive={product.is_active} quantityOnHand={summary.totalQuantity} />
+              <ActivationToggle
+                isActive={product.is_active}
+                onChange={setProductActive.bind(null, product.id)}
+                entityLabel="Product"
+                deactivateWarning={
+                  summary.totalQuantity > 0
+                    ? `${formatNumber(summary.totalQuantity)} units are still in stock. They can be shipped or written off, but no new stock can be received.`
+                    : "The product will be hidden from active lists. History is kept."
+                }
+              />
               <LinkButton href={`/products/${product.id}/edit`} variant="secondary">
                 <Pencil aria-hidden className="size-4" />
                 Edit

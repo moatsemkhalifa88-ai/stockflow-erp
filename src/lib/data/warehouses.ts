@@ -62,6 +62,17 @@ export async function getWarehouse(id: string): Promise<WarehouseRecord | null> 
   return result.data;
 }
 
+/** Whether the code is locked because stock has already moved here (see warehouses_validate_change). */
+export async function hasWarehouseStockHistory(warehouseId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const result = await supabase
+    .from("stock_movements")
+    .select("id", { count: "exact", head: true })
+    .eq("warehouse_id", warehouseId);
+  if (result.error) throw new Error(`Failed to load warehouse history: ${result.error.message}`);
+  return (result.count ?? 0) > 0;
+}
+
 /** Company-wide totals, for the dashboard and inventory page headers. */
 export function totalsOf(warehouses: WarehouseSummary[]) {
   return warehouses.reduce(

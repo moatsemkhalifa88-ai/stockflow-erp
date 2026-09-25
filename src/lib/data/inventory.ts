@@ -79,6 +79,39 @@ export async function listInventory(filters: InventoryFilters): Promise<Page<Inv
   return { rows: page.rows.map(toInventoryLine), total: page.total };
 }
 
+export interface InventoryTotals {
+  lineCount: number;
+  totalQuantity: number;
+  inventoryValue: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+}
+
+/**
+ * Totals for exactly the rows listInventory returns (same warehouse, category,
+ * status and search filters, all pages), summed in the database.
+ */
+export async function getInventoryTotals(filters: Omit<InventoryFilters, "sort" | "page">): Promise<InventoryTotals> {
+  const supabase = await createClient();
+  const rows = unwrap(
+    await supabase.rpc("inventory_totals", {
+      p_warehouse_id: filters.warehouseId,
+      p_category_id: filters.categoryId,
+      p_stock_status: filters.status,
+      p_search: filters.q || undefined,
+    }),
+    "inventory totals",
+  );
+  const r = rows[0];
+  return {
+    lineCount: num(r?.line_count),
+    totalQuantity: num(r?.total_quantity),
+    inventoryValue: num(r?.inventory_value),
+    lowStockCount: num(r?.low_stock_count),
+    outOfStockCount: num(r?.out_of_stock_count),
+  };
+}
+
 export async function getStockByWarehouse(productId: string): Promise<InventoryLine[]> {
   const supabase = await createClient();
   const rows = unwrap(

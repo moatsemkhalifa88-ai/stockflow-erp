@@ -1,23 +1,37 @@
-import { Warehouse } from "lucide-react";
+import { Plus, Warehouse } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { LinkButton } from "@/components/ui/link-button";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/table";
+import { canManageWarehouses } from "@/lib/auth/permissions";
+import { getActiveUser } from "@/lib/auth/session";
 import { listWarehouseSummaries, totalsOf } from "@/lib/data/warehouses";
 import { formatCurrency, formatNumber, formatWarehouseType } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Warehouses" };
 
 export default async function WarehousesPage() {
-  const warehouses = await listWarehouseSummaries();
+  const [warehouses, user] = await Promise.all([listWarehouseSummaries(), getActiveUser()]);
   const totals = totalsOf(warehouses);
 
   return (
     <>
-      <PageHeader title="Warehouses" description="Stock, value and alerts per location." />
+      <PageHeader
+        title="Warehouses"
+        description="Stock, value and alerts per location."
+        actions={
+          user && canManageWarehouses(user.role) ? (
+            <LinkButton href="/warehouses/new">
+              <Plus aria-hidden className="size-4" />
+              New warehouse
+            </LinkButton>
+          ) : null
+        }
+      />
 
       <Card>
         {warehouses.length === 0 ? (

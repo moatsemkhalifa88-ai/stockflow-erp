@@ -1277,6 +1277,21 @@ export type Database = {
         }
         Returns: Database["public"]["Tables"]["stock_movements"]["Row"]
       }
+      inventory_totals: {
+        Args: {
+          p_warehouse_id?: string
+          p_category_id?: string
+          p_stock_status?: string
+          p_search?: string
+        }
+        Returns: {
+          line_count: number
+          total_quantity: number
+          inventory_value: number
+          low_stock_count: number
+          out_of_stock_count: number
+        }[]
+      }
       reverse_stock_movement: {
         Args: {
           p_movement_id: string

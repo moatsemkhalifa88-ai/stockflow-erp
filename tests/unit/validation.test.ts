@@ -4,6 +4,7 @@ import { businessDayRange } from "@/lib/format";
 import { buildHref, getSearchParam, getSortParam } from "@/lib/search-params";
 import { validateAdjustment, type AdjustmentFormValues } from "@/lib/validation/movement";
 import { validateProduct, type ProductFormValues } from "@/lib/validation/product";
+import { readWarehouseForm, validateWarehouse, type WarehouseFormValues } from "@/lib/validation/warehouse";
 
 const CATEGORY_ID = "8a6b2f0e-3c1d-4e5f-9a7b-1c2d3e4f5a6b";
 const PRODUCT_ID = "0f1e2d3c-4b5a-4968-8776-655443322110";
@@ -105,6 +106,51 @@ describe("validateAdjustment", () => {
     for (const quantity of ["0", "-2", "1.5", "abc"]) {
       expect(validateAdjustment({ ...valid, quantity })).toMatchObject({ ok: false, errors: { quantity: expect.any(String) } });
     }
+  });
+});
+
+describe("validateWarehouse", () => {
+  const valid: WarehouseFormValues = {
+    code: "WH-NTN",
+    name: "Netanya Regional Warehouse",
+    warehouse_type: "REGIONAL",
+    address_line: "",
+    city: "Netanya",
+    country: "Israel",
+    phone: "09-555-0700",
+    manager_id: "",
+  };
+
+  it("accepts a valid warehouse and turns empty optional fields into null", () => {
+    expect(validateWarehouse(valid)).toEqual({
+      ok: true,
+      value: { ...valid, address_line: null, manager_id: null },
+    });
+  });
+
+  it("mirrors the database constraints field by field", () => {
+    const result = validateWarehouse({
+      ...valid,
+      code: "x",
+      name: "",
+      warehouse_type: "FACTORY",
+      city: "",
+      country: "",
+      phone: "call me",
+      manager_id: "not-a-uuid",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(Object.keys(result.errors).sort()).toEqual(
+        ["city", "code", "country", "manager_id", "name", "phone", "warehouse_type"].sort(),
+      );
+    }
+  });
+
+  it("upper-cases the code when reading the form", () => {
+    const form = new FormData();
+    form.set("code", " wh-ntn ");
+    expect(readWarehouseForm(form).code).toBe("WH-NTN");
   });
 });
 

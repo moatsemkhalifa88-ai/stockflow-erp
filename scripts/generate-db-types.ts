@@ -39,6 +39,8 @@ interface FunctionInfo {
   arg_has_default: boolean[];
   return_type: string;
   returns_set: boolean;
+  /** Columns of a RETURNS TABLE (...) function, in order. */
+  table_columns: { name: string; type: string }[] | null;
 }
 
 async function loadColumns(db: PGlite, relkinds: string[]): Promise<ColumnInfo[]> {
@@ -102,7 +104,12 @@ async function loadFunctions(db: PGlite): Promise<FunctionInfo[]> {
             array(select format_type(t, null) from unnest(p.proargtypes) t)::text[] as arg_types,
             array(select i >= p.pronargs - p.pronargdefaults from generate_series(0, p.pronargs - 1) i)::boolean[] as arg_has_default,
             format_type(p.prorettype, null) as return_type,
-            p.proretset as returns_set
+            p.proretset as returns_set,
+            case when p.proargmodes is null then null else (
+              select json_agg(json_build_object('name', p.proargnames[i], 'type', format_type(p.proallargtypes[i], null)) order by i)
+              from generate_subscripts(p.proargmodes, 1) i
+              where p.proargmodes[i] = 't'
+            ) end as table_columns
      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
      where n.nspname = 'public' and p.prokind = 'f'
        and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')
@@ -207,7 +214,8 @@ function renderFunctions(functions: FunctionInfo[], enums: Map<string, string[]>
         return `          ${name}${fn.arg_has_default[i] ? "?" : ""}: ${formatTypeToTs(t, enums)}`;
       })
       .join("\n");
-    const ret = returnTypeToTs(fn.return_type, enums, tableNames);
+    const columns = fn.table_columns?.map((c) => `          ${c.name}: ${formatTypeToTs(c.type, enums)}`).join("\n");
+    const ret = columns ? `{\n${columns}\n        }` : returnTypeToTs(fn.return_type, enums, tableNames);
     const argsBlock = args ? `{\n${args}\n        }` : "never";
     return `      ${fn.name}: {\n        Args: ${argsBlock}\n        Returns: ${ret}${fn.returns_set ? "[]" : ""}\n      }`;
   });

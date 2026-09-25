@@ -11,7 +11,7 @@ export interface DbError {
 }
 
 /** SQLSTATEs raised on purpose by the inventory engine and triggers (see migration 0700). */
-const USER_FACING_CODES = new Set(["SF001", "SF002", "SF003", "22023", "P0002", "23503", "42501"]);
+const USER_FACING_CODES = new Set(["SF001", "SF002", "SF003", "SF004", "SF005", "22023", "P0002", "23503", "42501"]);
 
 const CONSTRAINT_MESSAGES: Record<string, string> = {
   products_sku_key: "A product with this SKU already exists.",
@@ -21,6 +21,11 @@ const CONSTRAINT_MESSAGES: Record<string, string> = {
   products_name_check: "Name must be between 1 and 200 characters.",
   products_cost_price_check: "Cost price cannot be negative.",
   products_sale_price_check: "Sale price cannot be negative.",
+  warehouses_code_key: "A warehouse with this code already exists.",
+  warehouses_name_key: "A warehouse with this name already exists.",
+  warehouses_code_check: "Code must be 2-20 characters: capital letters, digits and dashes.",
+  warehouses_name_check: "Name must be between 1 and 150 characters.",
+  warehouses_warehouse_type_check: "Choose a valid warehouse type.",
 };
 
 export function describeDbError(error: DbError, fallback = "The operation could not be completed."): string {

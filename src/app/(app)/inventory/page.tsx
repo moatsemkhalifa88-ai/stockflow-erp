@@ -13,9 +13,14 @@ import { SelectField } from "@/components/ui/select-field";
 import { SortableTh, Table, TBody, Td, Th, THead, Tr } from "@/components/ui/table";
 import { canMoveStock } from "@/lib/auth/permissions";
 import { getActiveUser } from "@/lib/auth/session";
-import { INVENTORY_SORT_COLUMNS, listInventory, type InventorySortColumn } from "@/lib/data/inventory";
+import {
+  getInventoryTotals,
+  INVENTORY_SORT_COLUMNS,
+  listInventory,
+  type InventoryFilters,
+  type InventorySortColumn,
+} from "@/lib/data/inventory";
 import { getCategoryOptions, getWarehouseOptions } from "@/lib/data/lookups";
-import { listWarehouseSummaries, totalsOf } from "@/lib/data/warehouses";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { STOCK_STATUS_LABELS, STOCK_STATUSES } from "@/lib/inventory";
 import {
@@ -39,7 +44,7 @@ const SORTABLE: { key: InventorySortColumn; label: string; align?: "right" }[] =
 
 export default async function InventoryPage({ searchParams }: PageProps<"/inventory">) {
   const params = await searchParams;
-  const filters = {
+  const filters: InventoryFilters = {
     q: getSearchParam(params),
     warehouseId: getUuidParam(params, "warehouse"),
     categoryId: getUuidParam(params, "category"),
@@ -48,18 +53,17 @@ export default async function InventoryPage({ searchParams }: PageProps<"/invent
     page: getPageParam(params),
   };
 
-  const [user, warehouses, categories, summaries, inventory] = await Promise.all([
+  // The cards and the table use the same filters, so the cards always summarise the list below.
+  const [user, warehouses, categories, totals, inventory] = await Promise.all([
     getActiveUser(),
     getWarehouseOptions(),
     getCategoryOptions(),
-    listWarehouseSummaries(),
+    getInventoryTotals(filters),
     listInventory(filters),
   ]);
 
-  const scope = filters.warehouseId ? summaries.filter((s) => s.id === filters.warehouseId) : summaries;
-  const totals = totalsOf(scope);
-  const scopeLabel = filters.warehouseId ? (scope[0]?.code ?? "Selected warehouse") : "All warehouses";
   const isFiltered = Boolean(filters.q || filters.warehouseId || filters.categoryId || filters.status);
+  const scopeHint = `${formatNumber(totals.lineCount)} lines${isFiltered ? " matching the filters" : ", all warehouses"}`;
   const sortValue = `${filters.sort.ascending ? "" : "-"}${filters.sort.column}`;
   const sortHref = (key: InventorySortColumn) =>
     buildHref("/inventory", params, {
@@ -78,10 +82,10 @@ export default async function InventoryPage({ searchParams }: PageProps<"/invent
       />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Inventory value" value={formatCurrency(totals.inventoryValue)} icon={Wallet} hint={scopeLabel} />
-        <KpiCard label="Units on hand" value={formatNumber(totals.totalQuantity)} icon={Boxes} hint={scopeLabel} />
-        <KpiCard label="Low stock" value={formatNumber(totals.lowStockCount)} icon={AlertTriangle} hint="Active products at or below minimum" />
-        <KpiCard label="Out of stock" value={formatNumber(totals.outOfStockCount)} icon={CircleX} hint="Active products with 0 on hand" />
+        <KpiCard label="Inventory value" value={formatCurrency(totals.inventoryValue)} icon={Wallet} hint={scopeHint} />
+        <KpiCard label="Units on hand" value={formatNumber(totals.totalQuantity)} icon={Boxes} hint={scopeHint} />
+        <KpiCard label="Low stock" value={formatNumber(totals.lowStockCount)} icon={AlertTriangle} hint="Lines at or below minimum" />
+        <KpiCard label="Out of stock" value={formatNumber(totals.outOfStockCount)} icon={CircleX} hint="Lines with 0 on hand" />
       </div>
 
       <Card>
