@@ -18,6 +18,23 @@
   --color-sidebar-hover: #1e293b;
 }
 
+/*
+ * Chart tokens (light only - the app has no dark mode). Series slots 1-2 were
+ * validated for colour-vision deficiency and contrast against the white card
+ * surface with the dataviz palette validator. Text never uses series colours.
+ */
+:root {
+  --viz-series-1: #2a78d6;
+  --viz-series-2: #eb6834;
+  --viz-surface: #ffffff;
+  --viz-ink: #0b0b0b;
+  --viz-ink-secondary: #52514e;
+  --viz-muted: #898781;
+  --viz-grid: #e1e0d9;
+  --viz-axis: #c3c2b7;
+  --viz-hover: rgba(11, 11, 11, 0.04);
+}
+
 @layer base {
   html {
     color-scheme: light;

@@ -1480,6 +1480,215 @@ export type Database = {
         }
         Relationships: []
       }
+      v_alerts: {
+        Row: {
+          alert_type: string | null
+          severity: string | null
+          entity_type: string | null
+          entity_id: string | null
+          reference: string | null
+          title: string | null
+          detail: string | null
+          warehouse_id: string | null
+          warehouse_code: string | null
+          since_date: string | null
+          days_open: number | null
+        }
+        Relationships: []
+      }
+      v_inventory_valuation: {
+        Row: {
+          inventory_id: string | null
+          product_id: string | null
+          sku: string | null
+          product_name: string | null
+          unit_of_measure: string | null
+          category_id: string | null
+          category_name: string | null
+          warehouse_id: string | null
+          warehouse_code: string | null
+          warehouse_name: string | null
+          quantity: number | null
+          min_stock_level: number | null
+          cost_price: number | null
+          inventory_value: number | null
+          stock_status: string | null
+          product_is_active: boolean | null
+          warehouse_is_active: boolean | null
+          last_movement_at: string | null
+        }
+        Relationships: []
+      }
+      v_low_stock: {
+        Row: {
+          inventory_id: string | null
+          product_id: string | null
+          sku: string | null
+          product_name: string | null
+          unit_of_measure: string | null
+          category_id: string | null
+          category_name: string | null
+          warehouse_id: string | null
+          warehouse_code: string | null
+          warehouse_name: string | null
+          quantity: number | null
+          min_stock_level: number | null
+          shortfall: number | null
+          suggested_order_quantity: number | null
+          cost_price: number | null
+          suggested_order_value: number | null
+          stock_status: string | null
+          last_movement_at: string | null
+        }
+        Relationships: []
+      }
+      v_movements_daily: {
+        Row: {
+          business_date: string | null
+          warehouse_id: string | null
+          warehouse_code: string | null
+          product_id: string | null
+          sku: string | null
+          product_name: string | null
+          category_id: string | null
+          category_name: string | null
+          movement_type: Database["public"]["Enums"]["movement_type"] | null
+          movement_count: number | null
+          units_in: number | null
+          units_out: number | null
+          net_units: number | null
+          value_in: number | null
+          value_out: number | null
+        }
+        Relationships: []
+      }
+      v_purchase_receipts: {
+        Row: {
+          receipt_id: string | null
+          receipt_number: string | null
+          business_date: string | null
+          received_at: string | null
+          purchase_order_id: string | null
+          po_number: string | null
+          supplier_id: string | null
+          supplier_name: string | null
+          warehouse_id: string | null
+          warehouse_code: string | null
+          product_id: string | null
+          sku: string | null
+          product_name: string | null
+          category_id: string | null
+          category_name: string | null
+          quantity: number | null
+          unit_cost: number | null
+          line_value: number | null
+        }
+        Relationships: []
+      }
+      v_purchases_monthly: {
+        Row: {
+          month: string | null
+          warehouse_id: string | null
+          warehouse_code: string | null
+          receipt_count: number | null
+          quantity: number | null
+          purchase_value: number | null
+        }
+        Relationships: []
+      }
+      v_sales_by_product: {
+        Row: {
+          product_id: string | null
+          sku: string | null
+          product_name: string | null
+          category_id: string | null
+          category_name: string | null
+          order_count: number | null
+          quantity: number | null
+          gross_amount: number | null
+          discount_amount: number | null
+          net_revenue: number | null
+          cogs: number | null
+          gross_margin: number | null
+          first_sale_date: string | null
+          last_sale_date: string | null
+        }
+        Relationships: []
+      }
+      v_sales_lines: {
+        Row: {
+          sales_order_id: string | null
+          so_number: string | null
+          status: Database["public"]["Enums"]["sales_order_status"] | null
+          business_date: string | null
+          shipped_at: string | null
+          order_date: string | null
+          customer_id: string | null
+          customer_name: string | null
+          customer_type: string | null
+          warehouse_id: string | null
+          warehouse_code: string | null
+          product_id: string | null
+          sku: string | null
+          product_name: string | null
+          category_id: string | null
+          category_name: string | null
+          quantity: number | null
+          unit_price: number | null
+          discount_percent: number | null
+          gross_amount: number | null
+          discount_amount: number | null
+          net_revenue: number | null
+          cogs: number | null
+          gross_margin: number | null
+        }
+        Relationships: []
+      }
+      v_sales_monthly: {
+        Row: {
+          month: string | null
+          warehouse_id: string | null
+          warehouse_code: string | null
+          order_count: number | null
+          quantity: number | null
+          net_revenue: number | null
+          cogs: number | null
+          gross_margin: number | null
+        }
+        Relationships: []
+      }
+      v_stock_movements: {
+        Row: {
+          movement_id: string | null
+          movement_number: string | null
+          business_date: string | null
+          movement_date: string | null
+          posted_date: string | null
+          posted_at: string | null
+          movement_type: Database["public"]["Enums"]["movement_type"] | null
+          direction: number | null
+          is_reversal: boolean | null
+          reference_type: string | null
+          reference_id: string | null
+          reference_number: string | null
+          product_id: string | null
+          sku: string | null
+          product_name: string | null
+          category_id: string | null
+          category_name: string | null
+          warehouse_id: string | null
+          warehouse_code: string | null
+          warehouse_name: string | null
+          quantity: number | null
+          quantity_change: number | null
+          unit_cost: number | null
+          value_change: number | null
+          reason: string | null
+          performed_by: string | null
+          performed_by_name: string | null
+        }
+        Relationships: []
+      }
       warehouse_stock_summary: {
         Row: {
           warehouse_id: string | null
@@ -1511,6 +1720,14 @@ export type Database = {
           p_transfer_id: string
         }
         Returns: Database["public"]["Tables"]["stock_transfers"]["Row"]
+      }
+      audit_log_facets: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          facet: string
+          value: string
+          entries: number
+        }[]
       }
       cancel_purchase_order: {
         Args: {
@@ -1584,6 +1801,22 @@ export type Database = {
         }
         Returns: Database["public"]["Tables"]["stock_movements"]["Row"]
       }
+      dashboard_kpis: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_products: number
+          inventory_value: number
+          low_stock_items: number
+          out_of_stock_items: number
+          pending_purchase_orders: number
+          pending_sales_orders: number
+          movements_today: number
+          purchases_month: number
+          sales_month: number
+          month_start: string
+          business_today: string
+        }[]
+      }
       execute_stock_transfer: {
         Args: {
           p_transfer_id: string
@@ -1603,6 +1836,67 @@ export type Database = {
           inventory_value: number
           low_stock_count: number
           out_of_stock_count: number
+        }[]
+      }
+      inventory_valuation_as_of: {
+        Args: {
+          p_as_of: string
+          p_warehouse_id?: string
+          p_category_id?: string
+        }
+        Returns: {
+          product_id: string
+          sku: string
+          product_name: string
+          category_id: string
+          category_name: string
+          warehouse_id: string
+          warehouse_code: string
+          warehouse_name: string
+          quantity: number
+          cost_price: number
+          inventory_value: number
+        }[]
+      }
+      movement_report_totals: {
+        Args: {
+          p_from: string
+          p_to: string
+          p_warehouse_id?: string
+          p_category_id?: string
+          p_movement_type?: Database["public"]["Enums"]["movement_type"]
+        }
+        Returns: {
+          movement_count: number
+          units_in: number
+          units_out: number
+          value_in: number
+          value_out: number
+        }[]
+      }
+      movements_by_type: {
+        Args: {
+          p_from: string
+          p_to: string
+          p_warehouse_id?: string
+        }
+        Returns: {
+          movement_type: Database["public"]["Enums"]["movement_type"]
+          movement_count: number
+          units: number
+          value: number
+        }[]
+      }
+      purchases_vs_sales: {
+        Args: {
+          p_from: string
+          p_to: string
+          p_bucket?: string
+        }
+        Returns: {
+          bucket_start: string
+          purchases: number
+          sales: number
         }[]
       }
       receive_goods: {
@@ -1669,6 +1963,23 @@ export type Database = {
           p_po_id: string
         }
         Returns: Database["public"]["Tables"]["purchase_orders"]["Row"]
+      }
+      top_products_by_movement: {
+        Args: {
+          p_from: string
+          p_to: string
+          p_limit?: number
+          p_warehouse_id?: string
+        }
+        Returns: {
+          product_id: string
+          sku: string
+          product_name: string
+          units_in: number
+          units_out: number
+          units_moved: number
+          movement_count: number
+        }[]
       }
       update_purchase_order: {
         Args: {

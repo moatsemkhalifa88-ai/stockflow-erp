@@ -3,10 +3,11 @@
 An inventory and warehouse management system built as a realistic internal business application:
 multi-warehouse stock, purchasing, sales, transfers, and a fully audited stock ledger.
 
-> **Status:** Phase 4 of 6 is complete. Phase 1 delivered the foundation (schema, auth, roles, RLS, app shell, demo data),
+> **Status:** Phase 5 of 6 is complete. Phase 1 delivered the foundation (schema, auth, roles, RLS, app shell, demo data),
 > Phase 2 the inventory engine and the products, warehouses, inventory and stock-movement modules, and Phase 3 the
 > purchasing workflow: suppliers, purchase orders with approval, and goods receipts that post stock through the engine,
-> and Phase 4 customers, sales orders with all-or-nothing shipping, and warehouse-to-warehouse transfers.
+> Phase 4 customers, sales orders with all-or-nothing shipping, and warehouse-to-warehouse transfers, and Phase 5
+> the analytics dashboard, alerts center, reports with CSV export, audit log UI and a BI view layer for Power BI.
 > See the [roadmap](#roadmap).
 
 ## Tech stack
@@ -16,7 +17,7 @@ multi-warehouse stock, purchasing, sales, transfers, and a fully audited stock l
 | Frontend  | Next.js 16 (App Router), React 19, TypeScript (strict)      |
 | Styling   | Tailwind CSS 4, lucide-react icons                          |
 | Backend   | Supabase: PostgreSQL 17, Auth, Row Level Security           |
-| Charts    | Recharts (Phase 5)                                          |
+| Charts    | Recharts                                                    |
 | Testing   | Vitest + PGlite (embedded PostgreSQL, no Docker needed)     |
 
 ## Core design principles
@@ -140,6 +141,7 @@ Migrations live in [`supabase/migrations`](supabase/migrations) and are applied 
 | `20260927…0100_sales_role` | `sales` role; customers maintained by admins and sales |
 | `20260927…0200_sales_orders` | SO workflow RPCs, status-machine triggers, `ship_sales_order`, `reverse_sales_order_shipment`, sales views |
 | `20260927…0300_stock_transfers` | transfer workflow RPCs incl. `execute_stock_transfer`, status triggers, document-movement guard for sales and transfers |
+| `20260927…0400_analytics` | BI views (`v_*`), alerts view, dashboard / chart / report functions |
 
 **Movement types:** `PURCHASE_RECEIPT`, `SALE`, `TRANSFER_IN`, `TRANSFER_OUT`, `ADJUSTMENT_IN`, `ADJUSTMENT_OUT`, `RETURN`.
 
@@ -350,6 +352,87 @@ A transfer can be cancelled until it is executed. An executed transfer is correc
 by reversing one side, which would leave stock missing or duplicated. The document-movement trigger enforces
 this, and it also ensures sales and transfer movements can only come from these functions.
 
+## Analytics, alerts and reports
+
+### One source for every number
+
+The dashboard, the reports, the CSV exports and a BI tool all read the **same SQL views and functions**
+(migration `…0400_analytics`), so a figure can't differ between screens. Automated tests post a known
+scenario and check that the dashboard, the reports and raw SQL agree. A read-only live test repeats those checks
+on the hosted data.
+
+| Term | Definition |
+| ---- | ---------- |
+| Business date | The date in Israel (Asia/Jerusalem); the database clock is UTC |
+| Inventory value | quantity × **current** cost price, from `inventory_valuation` |
+| Low-stock / out-of-stock items | product × warehouse lines (active product, active warehouse) at or below the minimum / at zero |
+| Pending purchase orders | submitted, approved or partially received |
+| Pending sales orders | confirmed or processing |
+| Movements today | ledger entries whose movement date is today |
+| Purchases | value of goods **received** (receipt quantity × PO unit cost), by receipt date; reversed receipts excluded |
+| Sales | **net** revenue (after line discounts) of shipped / completed orders, by ship date; reversed shipments excluded |
+| COGS / gross margin | shipped quantity × the unit cost the SALE movement was posted at / net revenue − COGS |
+
+### Dashboard
+
+- **Key figures**: the nine KPIs above plus open alerts. Each tile links to the report or list behind it.
+- **Right now**: inventory value by warehouse, the most urgent low-stock items (on hand against the minimum),
+  and the latest alerts.
+- **Activity**: filtered by one date-range row (presets or a custom range). Shows purchases vs sales over
+  time (per day, week or month depending on the range), movements by type, and the top 10 products by units moved.
+  Every chart has a *Show as table* view.
+
+### Alerts center
+
+Alerts are **computed on read** by the `v_alerts` view; there is no alerts table that could go out of date.
+An alert disappears as soon as its cause is fixed.
+
+| Alert | Rule | Severity |
+| ----- | ---- | -------- |
+| Out of stock | active product at an active warehouse with 0 on hand | critical |
+| Low stock | on hand at or below the minimum | warning |
+| Delayed purchase order | approved / partly received and past the expected delivery date | warning; critical after 7 days |
+| Unprocessed sales order | confirmed / processing for over 2 days, or past the requested delivery date | warning; critical if late |
+| PO waiting for approval | submitted, not approved | info |
+| Pending transfer | requested or approved, not executed | info |
+
+### Reports (with CSV export)
+
+| Report | Filters | Notes |
+| ------ | ------- | ----- |
+| Inventory Valuation | as-of date, warehouse, category | stock **as recorded in the ledger at the end of that day** (by posting time), valued at current cost prices; for today it equals the dashboard |
+| Stock Movement Report | date range, warehouse, category, type | every ledger entry with units and value in/out, and totals |
+| Low Stock Report | warehouse, category, status | shortfall and a suggested order quantity (the larger of the reorder quantity and the shortfall) |
+
+The export uses the same filters and data as the screen. CSV files include a UTF-8 marker so Excel shows Hebrew
+and ₪ correctly, and a cell that starts with `= + - @` is prefixed with `'` so it can never run as a
+spreadsheet formula.
+
+### Audit log
+
+`/audit-log` (admins only; RLS enforces it) lists who did what and when, filterable by entity, action, user and
+date, with a per-record history. Edits show the changed fields as *old → new*. It covers product and other
+master-data changes (triggers), PO approval, goods receipts, shipments, adjustments, reversals and transfers
+(workflow functions). A test checks each of these is logged.
+
+### BI views (Power BI)
+
+| View | Grain |
+| ---- | ----- |
+| `v_inventory_valuation` | product × warehouse, current stock and value |
+| `v_stock_movements` | one ledger entry, with business date, category and value |
+| `v_movements_daily` | day × warehouse × product × movement type |
+| `v_purchase_receipts` | one received purchase line (reversed receipts excluded) |
+| `v_sales_lines` | one shipped / completed sales line with revenue, COGS and margin |
+| `v_sales_by_product` | product totals |
+| `v_purchases_monthly`, `v_sales_monthly` | month × warehouse |
+| `v_low_stock`, `v_alerts` | current exceptions |
+
+All views are `security_invoker`: they apply the caller's row-level security. To connect Power BI: *Get data →
+PostgreSQL database*, server `aws-<n>-<region>.pooler.supabase.com:5432` (Session pooler), database `postgres`,
+and import the `v_*` views. Use a dedicated read-only database login rather than the owner account (see the
+roadmap).
+
 ## Testing
 
 ```bash
@@ -380,6 +463,9 @@ Supabase stub (roles, `auth.users`, `auth.uid()`), then every migration and the 
   re-shipping after a reversal, status transitions, permissions per role, customer figures
 - transfers: successful transfer (both warehouses correct), insufficient stock (no change anywhere), same
   warehouse refused, inactive destination, request / approve / reject / cancel rules, legs never reversed alone
+- analytics: KPIs = raw SQL = reports = BI views (inventory value, low / out of stock, pending orders, movements
+  today, monthly purchases and sales excluding reversals), revenue / COGS / margin, chart functions add up,
+  as-of valuation, alert rules, audit coverage of every workflow, access rules; CSV quoting and formula guard
 
 ### Concurrency test (real PostgreSQL)
 
@@ -397,7 +483,8 @@ the same inventory row**:
 - 4 parallel receipts of 3 against 10 ordered: exactly 3 succeed;
 - two shipments of 7 competing for 10 in stock: the second waits, then is refused ("need 7, available 3");
 - 4 parallel shipments of 3 against 10 in stock: exactly 3 ship;
-- two orders locking the same products in opposite line order both ship (no deadlock).
+- two orders locking the same products in opposite line order both ship (no deadlock);
+- read-only: on the hosted data, the dashboard KPIs match raw SQL, the reports and the chart functions.
 
 It creates its own user, category, warehouse and products under a random run id and deletes all of them
 afterwards, including their ledger and audit rows. To do that, it switches off the append-only triggers
@@ -433,6 +520,9 @@ src/
       customers/      # list, detail, new, edit
       sales-orders/   # list, detail, new, edit
       transfers/      # list, detail, request
+      alerts/         # alerts center
+      reports/        # inventory valuation, stock movements, low stock (+ CSV export routes)
+      audit-log/      # audit trail (admins)
     login/            # sign-in page + form (Server Action)
   components/
     layout/           # app shell: sidebar, top bar, breadcrumbs, user menu
@@ -457,7 +547,7 @@ tests/unit/           # validation and helper unit tests
 - [x] **Phase 2: Inventory engine.** `create_stock_movement`, reversals, products, warehouses, inventory, adjustments
 - [x] **Phase 3: Purchasing.** Suppliers, purchase-order workflow, `receive_goods`
 - [x] **Phase 4: Sales and transfers.** Customers, sales orders, `ship_sales_order`, warehouse transfers
-- [ ] **Phase 5: Analytics.** Dashboard KPIs and charts, alerts, reports with CSV export, audit-log UI, BI views
+- [x] **Phase 5: Analytics.** Dashboard KPIs and charts, alerts, reports with CSV export, audit-log UI, BI views
 - [ ] **Phase 6: Polish.** Full documentation, ER diagram, screenshots, Power BI
 
 ---

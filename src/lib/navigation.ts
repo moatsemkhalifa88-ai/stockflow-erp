@@ -39,7 +39,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: "Overview",
     items: [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: EVERYONE, available: true },
-      { label: "Alerts", href: "/alerts", icon: Bell, roles: EVERYONE, available: false },
+      { label: "Alerts", href: "/alerts", icon: Bell, roles: EVERYONE, available: true },
     ],
   },
   {
@@ -70,8 +70,8 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Analytics",
     items: [
-      { label: "Reports", href: "/reports", icon: BarChart3, roles: EVERYONE, available: false },
-      { label: "Audit Log", href: "/audit-log", icon: ScrollText, roles: ["admin"], available: false },
+      { label: "Reports", href: "/reports", icon: BarChart3, roles: EVERYONE, available: true },
+      { label: "Audit Log", href: "/audit-log", icon: ScrollText, roles: ["admin"], available: true },
     ],
   },
 ];

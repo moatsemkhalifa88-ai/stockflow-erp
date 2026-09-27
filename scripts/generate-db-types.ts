@@ -216,7 +216,7 @@ function renderFunctions(functions: FunctionInfo[], enums: Map<string, string[]>
       .join("\n");
     const columns = fn.table_columns?.map((c) => `          ${c.name}: ${formatTypeToTs(c.type, enums)}`).join("\n");
     const ret = columns ? `{\n${columns}\n        }` : returnTypeToTs(fn.return_type, enums, tableNames);
-    const argsBlock = args ? `{\n${args}\n        }` : "never";
+    const argsBlock = args ? `{\n${args}\n        }` : "Record<PropertyKey, never>";
     return `      ${fn.name}: {\n        Args: ${argsBlock}\n        Returns: ${ret}${fn.returns_set ? "[]" : ""}\n      }`;
   });
   return `{\n${out.join("\n")}\n    }`;

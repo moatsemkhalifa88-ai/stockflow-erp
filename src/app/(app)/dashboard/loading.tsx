@@ -7,21 +7,18 @@ export default function DashboardLoading() {
     <div aria-busy="true" aria-label="Loading dashboard">
       <Skeleton className="mb-2 h-8 w-64" />
       <Skeleton className="mb-6 h-4 w-80" />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }, (_, i) => (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {Array.from({ length: 10 }, (_, i) => (
           <KpiCardSkeleton key={i} />
         ))}
       </div>
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <Card className="h-72 p-5 lg:col-span-2">
-          <Skeleton className="h-5 w-40" />
-        </Card>
-        <Card className="h-72 space-y-4 p-5">
-          <Skeleton className="h-5 w-32" />
-          {Array.from({ length: 4 }, (_, i) => (
-            <Skeleton key={i} className="h-10 w-full" />
-          ))}
-        </Card>
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        {Array.from({ length: 2 }, (_, i) => (
+          <Card key={i} className="h-80 space-y-4 p-5">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-60 w-full" />
+          </Card>
+        ))}
       </div>
     </div>
   );

@@ -70,7 +70,7 @@ export function Sidebar({ role, mobileOpen, onClose }: SidebarProps) {
           ))}
         </nav>
 
-        <div className="border-t border-white/10 px-5 py-3 text-xs text-sidebar-muted">Phase 4 · Sales and transfers</div>
+        <div className="border-t border-white/10 px-5 py-3 text-xs text-sidebar-muted">Phase 5 · Analytics</div>
       </aside>
     </>
   );
