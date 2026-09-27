@@ -16,7 +16,8 @@
     "seed:users": "node node_modules/tsx/dist/cli.mjs scripts/seed-users.ts",
     "seed:stock": "node node_modules/tsx/dist/cli.mjs scripts/seed-stock.ts",
     "seed:purchasing": "node node_modules/tsx/dist/cli.mjs scripts/seed-purchasing.ts",
-    "seed:sales": "node node_modules/tsx/dist/cli.mjs scripts/seed-sales.ts"
+    "seed:sales": "node node_modules/tsx/dist/cli.mjs scripts/seed-sales.ts",
+    "seed:demo": "npm run seed:users && npm run seed:stock && npm run seed:purchasing && npm run seed:sales"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

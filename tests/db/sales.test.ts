@@ -199,14 +199,24 @@ describe("sales order workflow", () => {
 
     it("accepts a back-dated ship date but not a future one or one before the order date", async () => {
       await stock("CMP-2004", 2);
-      const so = await processingSo([{ product_id: product["CMP-2004"], quantity: 1 }]);
+      // Order dated 3 business days ago, so "1 day ago" is always on or after the order date,
+      // whatever the time of day (a same-day order would fail just after midnight in Israel).
+      const r = await as(seller, () =>
+        db.query<SalesOrder>(
+          "select * from public.create_sales_order($1, $2, $3::jsonb, private.business_date() - 3)",
+          [customerId, warehouseId, JSON.stringify([{ product_id: product["CMP-2004"], quantity: 1 }])],
+        ),
+      );
+      const so = r.rows[0];
+      await step(seller, "confirm_sales_order", so.id);
+      await step(manager, "start_processing_sales_order", so.id);
       await expect(
         as(manager, () => db.query("select public.ship_sales_order($1, now() + interval '1 day')", [so.id])),
       ).rejects.toThrow(/future/);
       await expect(
         as(manager, () => db.query("select public.ship_sales_order($1, now() - interval '400 days')", [so.id])),
       ).rejects.toThrow(/before the order date/);
-      await as(manager, () => db.query("select public.ship_sales_order($1, now() - interval '1 hour')", [so.id]));
+      await as(manager, () => db.query("select public.ship_sales_order($1, now() - interval '1 day')", [so.id]));
       expect(await statusOf(so.id)).toBe("SHIPPED");
     });
   });
