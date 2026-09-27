@@ -49,7 +49,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Inventory", href: "/inventory", icon: Boxes, roles: EVERYONE, available: true },
       { label: "Stock Movements", href: "/movements", icon: History, roles: OPERATIONS, available: true },
       { label: "Warehouses", href: "/warehouses", icon: Warehouse, roles: EVERYONE, available: true },
-      { label: "Transfers", href: "/transfers", icon: ArrowLeftRight, roles: OPERATIONS, available: false },
+      { label: "Transfers", href: "/transfers", icon: ArrowLeftRight, roles: OPERATIONS, available: true },
     ],
   },
   {
@@ -63,8 +63,8 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Sales",
     items: [
-      { label: "Sales Orders", href: "/sales-orders", icon: ShoppingCart, roles: ["admin", "warehouse_manager", "sales"], available: false },
-      { label: "Customers", href: "/customers", icon: Users, roles: ["admin", "sales"], available: false },
+      { label: "Sales Orders", href: "/sales-orders", icon: ShoppingCart, roles: ["admin", "warehouse_manager", "sales"], available: true },
+      { label: "Customers", href: "/customers", icon: Users, roles: ["admin", "sales"], available: true },
     ],
   },
   {

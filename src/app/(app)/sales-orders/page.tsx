@@ -1,7 +1,7 @@
-import { ClipboardList, Plus } from "lucide-react";
+import { Plus, ShoppingCart } from "lucide-react";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
-import { PurchaseOrderTable } from "@/components/purchasing/po-table";
+import { SalesOrderTable } from "@/components/sales/so-table";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterBar } from "@/components/ui/filter-bar";
@@ -11,18 +11,18 @@ import { Pagination } from "@/components/ui/pagination";
 import { SelectField } from "@/components/ui/select-field";
 import { SortLinks } from "@/components/ui/sort-links";
 import { StatusChip } from "@/components/ui/status-chip";
-import { canManagePurchaseOrders } from "@/lib/auth/permissions";
+import { canManageSalesOrders } from "@/lib/auth/permissions";
 import { getActiveUser } from "@/lib/auth/session";
-import { getSupplierOptions, getWarehouseOptions } from "@/lib/data/lookups";
+import { getCustomerOptions, getWarehouseOptions } from "@/lib/data/lookups";
 import {
-  getPurchaseOrderStatusCounts,
-  listPurchaseOrders,
-  PO_SORT_COLUMNS,
-  type PurchaseOrderFilters,
-  type PurchaseOrderSortColumn,
-} from "@/lib/data/purchase-orders";
+  getSalesOrderStatusCounts,
+  listSalesOrders,
+  SO_SORT_COLUMNS,
+  type SalesOrderFilters,
+  type SalesOrderSortColumn,
+} from "@/lib/data/sales-orders";
 import { businessToday } from "@/lib/format";
-import { PO_STATUS_LABELS, PURCHASE_ORDER_STATUSES } from "@/lib/purchasing";
+import { SALES_ORDER_STATUSES, SO_STATUS_LABELS } from "@/lib/sales";
 import {
   buildHref,
   getDateParam,
@@ -35,73 +35,72 @@ import {
   PAGE_SIZE,
 } from "@/lib/search-params";
 
-export const metadata: Metadata = { title: "Purchase Orders" };
+export const metadata: Metadata = { title: "Sales Orders" };
 
-const SORT_LABELS: Record<PurchaseOrderSortColumn, string> = {
-  po_number: "PO number",
+const SORT_LABELS: Record<SalesOrderSortColumn, string> = {
+  so_number: "SO number",
   order_date: "Order date",
-  expected_delivery_date: "Expected delivery",
-  supplier_name: "Supplier",
+  requested_delivery_date: "Requested delivery",
+  customer_name: "Customer",
   total_amount: "Total",
 };
 
-export default async function PurchaseOrdersPage({ searchParams }: PageProps<"/purchase-orders">) {
+export default async function SalesOrdersPage({ searchParams }: PageProps<"/sales-orders">) {
   const params = await searchParams;
-  const filters: PurchaseOrderFilters = {
+  const filters: SalesOrderFilters = {
     q: getSearchParam(params),
-    status: getEnumParam(params, "status", PURCHASE_ORDER_STATUSES),
+    status: getEnumParam(params, "status", SALES_ORDER_STATUSES),
     openOnly: getParam(params, "status") === "OPEN",
-    supplierId: getUuidParam(params, "supplier"),
+    customerId: getUuidParam(params, "customer"),
     warehouseId: getUuidParam(params, "warehouse"),
     from: getDateParam(params, "from"),
     to: getDateParam(params, "to"),
-    sort: getSortParam(params, PO_SORT_COLUMNS, { column: "order_date", ascending: false }),
+    sort: getSortParam(params, SO_SORT_COLUMNS, { column: "order_date", ascending: false }),
     page: getPageParam(params),
   };
 
-  const [user, suppliers, warehouses, counts, orders] = await Promise.all([
+  const [user, customers, warehouses, counts, orders] = await Promise.all([
     getActiveUser(),
-    getSupplierOptions(),
+    getCustomerOptions(),
     getWarehouseOptions(),
-    getPurchaseOrderStatusCounts(),
-    listPurchaseOrders(filters),
+    getSalesOrderStatusCounts(),
+    listSalesOrders(filters),
   ]);
   const isFiltered = Boolean(
-    filters.q || filters.status || filters.openOnly || filters.supplierId || filters.warehouseId || filters.from || filters.to,
+    filters.q || filters.status || filters.openOnly || filters.customerId || filters.warehouseId || filters.from || filters.to,
   );
   const sortValue = `${filters.sort.ascending ? "" : "-"}${filters.sort.column}`;
   const currentStatus = getParam(params, "status");
-  const openCount = counts.SUBMITTED + counts.APPROVED + counts.PARTIALLY_RECEIVED;
 
   return (
     <>
       <PageHeader
-        title="Purchase Orders"
-        description="Draft, submit, approve and receive orders from suppliers."
+        title="Sales Orders"
+        description="Draft, confirm, pick and ship customer orders."
         actions={
-          user && canManagePurchaseOrders(user.role) ? (
-            <LinkButton href="/purchase-orders/new">
+          user && canManageSalesOrders(user.role) ? (
+            <LinkButton href="/sales-orders/new">
               <Plus aria-hidden className="size-4" />
-              New purchase order
+              New sales order
             </LinkButton>
           ) : null
         }
       />
 
       <nav aria-label="Filter by status" className="mb-4 flex flex-wrap gap-2">
-        <StatusChip href={buildHref("/purchase-orders", params, { status: undefined, page: undefined })} active={!currentStatus} label="All" />
+        <StatusChip href={buildHref("/sales-orders", params, { status: undefined, page: undefined })} active={!currentStatus} label="All" />
         <StatusChip
-          href={buildHref("/purchase-orders", params, { status: "OPEN", page: undefined })}
+          href={buildHref("/sales-orders", params, { status: "OPEN", page: undefined })}
           active={currentStatus === "OPEN"}
           label="Open"
-          count={openCount}
+          count={counts.CONFIRMED + counts.PROCESSING}
         />
-        {PURCHASE_ORDER_STATUSES.map((s) => (
+        {SALES_ORDER_STATUSES.map((s) => (
           <StatusChip
             key={s}
-            href={buildHref("/purchase-orders", params, { status: s, page: undefined })}
+            href={buildHref("/sales-orders", params, { status: s, page: undefined })}
             active={currentStatus === s}
-            label={PO_STATUS_LABELS[s]}
+            label={SO_STATUS_LABELS[s]}
             count={counts[s]}
           />
         ))}
@@ -109,20 +108,20 @@ export default async function PurchaseOrdersPage({ searchParams }: PageProps<"/p
 
       <Card>
         <FilterBar
-          action="/purchase-orders"
-          searchLabel="Search purchase orders"
-          searchPlaceholder="PO number or supplier"
+          action="/sales-orders"
+          searchLabel="Search sales orders"
+          searchPlaceholder="SO number or customer"
           searchValue={filters.q}
           hidden={{ sort: sortValue, status: currentStatus || undefined }}
           isFiltered={isFiltered}
         >
           <SelectField
-            id="filter-supplier"
-            name="supplier"
-            label="Supplier"
-            placeholder="All suppliers"
-            defaultValue={filters.supplierId ?? ""}
-            options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
+            id="filter-customer"
+            name="customer"
+            label="Customer"
+            placeholder="All customers"
+            defaultValue={filters.customerId ?? ""}
+            options={customers.map((c) => ({ value: c.id, label: c.name }))}
           />
           <SelectField
             id="filter-warehouse"
@@ -139,11 +138,10 @@ export default async function PurchaseOrdersPage({ searchParams }: PageProps<"/p
         <SortLinks
           active={filters.sort.column}
           ascending={filters.sort.ascending}
-          options={PO_SORT_COLUMNS.map((key) => ({
+          options={SO_SORT_COLUMNS.map((key) => ({
             key,
             label: SORT_LABELS[key],
-            href: buildHref("/purchase-orders", params, {
-              // First click sorts descending (newest / largest first), the next click flips it.
+            href: buildHref("/sales-orders", params, {
               sort: filters.sort.column === key && !filters.sort.ascending ? key : `-${key}`,
               page: undefined,
             }),
@@ -152,19 +150,19 @@ export default async function PurchaseOrdersPage({ searchParams }: PageProps<"/p
 
         {orders.rows.length === 0 ? (
           <EmptyState
-            icon={ClipboardList}
-            title={isFiltered ? "No purchase orders match these filters" : "No purchase orders yet"}
-            description={isFiltered ? "Try a different search or reset the filters." : "Create the first purchase order to start buying stock."}
+            icon={ShoppingCart}
+            title={isFiltered ? "No sales orders match these filters" : "No sales orders yet"}
+            description={isFiltered ? "Try a different search or reset the filters." : "Create the first sales order."}
           />
         ) : (
-          <PurchaseOrderTable orders={orders.rows} today={businessToday()} />
+          <SalesOrderTable orders={orders.rows} today={businessToday()} />
         )}
 
         <Pagination
           page={filters.page}
           pageSize={PAGE_SIZE}
           total={orders.total}
-          hrefForPage={(page) => buildHref("/purchase-orders", params, { page: page > 1 ? page : undefined })}
+          hrefForPage={(page) => buildHref("/sales-orders", params, { page: page > 1 ? page : undefined })}
         />
       </Card>
     </>

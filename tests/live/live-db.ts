@@ -320,3 +320,43 @@ export async function purchasingTriggerEnabled(pool: Pool): Promise<boolean> {
   );
   return Number(r.rows[0].n) === 1;
 }
+
+/**
+ * Removes sales orders created for a customer, and the customer. Run BEFORE
+ * removeFixture (orders reference the fixture warehouse). Lines of non-draft
+ * orders are frozen by a trigger, which this test-only cleanup switches off
+ * inside one transaction as the table owner.
+ */
+export async function removeSales(pool: Pool, customerId: string): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    await client.query("set local lock_timeout = '30s'");
+    await client.query("alter table public.sales_order_items disable trigger sales_order_items_enforce_rules");
+    await client.query("delete from public.sales_orders where customer_id = $1", [customerId]); // cascades to lines
+    await client.query("delete from public.customers where id = $1", [customerId]);
+    await client.query("alter table public.sales_order_items enable trigger sales_order_items_enforce_rules");
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function salesLeftovers(pool: Pool, customerId: string): Promise<number> {
+  const r = await pool.query<{ n: string }>(
+    `select (select count(*) from public.customers where id = $1)
+          + (select count(*) from public.sales_orders where customer_id = $1) as n`,
+    [customerId],
+  );
+  return Number(r.rows[0].n);
+}
+
+export async function salesTriggerEnabled(pool: Pool): Promise<boolean> {
+  const r = await pool.query<{ n: string }>(
+    "select count(*) as n from pg_trigger where tgname = 'sales_order_items_enforce_rules' and tgenabled = 'O'",
+  );
+  return Number(r.rows[0].n) === 1;
+}

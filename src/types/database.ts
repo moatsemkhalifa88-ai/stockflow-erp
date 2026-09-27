@@ -719,6 +719,12 @@ export type Database = {
           cancel_reason: string | null
           created_at: string
           updated_at: string
+          processing_started_at: string | null
+          processing_started_by: string | null
+          shipment_posted_at: string | null
+          shipment_reversed_at: string | null
+          shipment_reversed_by: string | null
+          shipment_reversal_reason: string | null
         }
         Insert: {
           id?: string
@@ -743,6 +749,12 @@ export type Database = {
           cancel_reason?: string | null
           created_at?: string
           updated_at?: string
+          processing_started_at?: string | null
+          processing_started_by?: string | null
+          shipment_posted_at?: string | null
+          shipment_reversed_at?: string | null
+          shipment_reversed_by?: string | null
+          shipment_reversal_reason?: string | null
         }
         Update: {
           id?: string
@@ -767,6 +779,12 @@ export type Database = {
           cancel_reason?: string | null
           created_at?: string
           updated_at?: string
+          processing_started_at?: string | null
+          processing_started_by?: string | null
+          shipment_posted_at?: string | null
+          shipment_reversed_at?: string | null
+          shipment_reversed_by?: string | null
+          shipment_reversal_reason?: string | null
         }
         Relationships: [
           {
@@ -788,6 +806,20 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_orders_processing_started_by_fkey"
+            columns: ["processing_started_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_orders_shipment_reversed_by_fkey"
+            columns: ["shipment_reversed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -968,6 +1000,9 @@ export type Database = {
           notes: string | null
           created_at: string
           updated_at: string
+          rejected_by: string | null
+          rejected_at: string | null
+          rejection_reason: string | null
         }
         Insert: {
           id?: string
@@ -987,6 +1022,9 @@ export type Database = {
           notes?: string | null
           created_at?: string
           updated_at?: string
+          rejected_by?: string | null
+          rejected_at?: string | null
+          rejection_reason?: string | null
         }
         Update: {
           id?: string
@@ -1006,6 +1044,9 @@ export type Database = {
           notes?: string | null
           created_at?: string
           updated_at?: string
+          rejected_by?: string | null
+          rejected_at?: string | null
+          rejection_reason?: string | null
         }
         Relationships: [
           {
@@ -1032,6 +1073,13 @@ export type Database = {
           {
             foreignKeyName: "stock_transfers_executed_by_fkey"
             columns: ["executed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_rejected_by_fkey"
+            columns: ["rejected_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1175,6 +1223,29 @@ export type Database = {
       }
     }
     Views: {
+      customer_sales_summary: {
+        Row: {
+          customer_id: string | null
+          code: string | null
+          name: string | null
+          customer_type: string | null
+          contact_name: string | null
+          email: string | null
+          phone: string | null
+          city: string | null
+          country: string | null
+          credit_limit: number | null
+          payment_terms_days: number | null
+          is_active: boolean | null
+          created_at: string | null
+          order_count: number | null
+          total_sales_value: number | null
+          last_order_date: string | null
+          open_count: number | null
+          open_value: number | null
+        }
+        Relationships: []
+      }
       goods_receipt_overview: {
         Row: {
           id: string | null
@@ -1282,6 +1353,44 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_order_overview: {
+        Row: {
+          id: string | null
+          so_number: string | null
+          status: Database["public"]["Enums"]["sales_order_status"] | null
+          customer_id: string | null
+          customer_code: string | null
+          customer_name: string | null
+          customer_type: string | null
+          warehouse_id: string | null
+          warehouse_code: string | null
+          warehouse_name: string | null
+          order_date: string | null
+          requested_delivery_date: string | null
+          currency: string | null
+          subtotal: number | null
+          discount_amount: number | null
+          total_amount: number | null
+          notes: string | null
+          line_count: number | null
+          quantity: number | null
+          quantity_shipped: number | null
+          created_by: string | null
+          created_by_name: string | null
+          confirmed_at: string | null
+          processing_started_at: string | null
+          shipped_at: string | null
+          shipped_by_name: string | null
+          completed_at: string | null
+          cancelled_at: string | null
+          cancel_reason: string | null
+          shipment_reversed_at: string | null
+          shipment_reversal_reason: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
       stock_movement_ledger: {
         Row: {
           id: string | null
@@ -1312,6 +1421,38 @@ export type Database = {
           performed_by: string | null
           performed_by_name: string | null
           movement_date: string | null
+          created_at: string | null
+        }
+        Relationships: []
+      }
+      stock_transfer_overview: {
+        Row: {
+          id: string | null
+          transfer_number: string | null
+          status: Database["public"]["Enums"]["transfer_status"] | null
+          source_warehouse_id: string | null
+          source_code: string | null
+          source_name: string | null
+          destination_warehouse_id: string | null
+          destination_code: string | null
+          destination_name: string | null
+          notes: string | null
+          line_count: number | null
+          total_quantity: number | null
+          total_value: number | null
+          requested_by: string | null
+          requested_by_name: string | null
+          requested_at: string | null
+          approved_by_name: string | null
+          approved_at: string | null
+          executed_by_name: string | null
+          executed_at: string | null
+          rejected_by_name: string | null
+          rejected_at: string | null
+          rejection_reason: string | null
+          cancelled_by_name: string | null
+          cancelled_at: string | null
+          cancel_reason: string | null
           created_at: string | null
         }
         Relationships: []
@@ -1365,12 +1506,44 @@ export type Database = {
         }
         Returns: Database["public"]["Tables"]["purchase_orders"]["Row"]
       }
+      approve_stock_transfer: {
+        Args: {
+          p_transfer_id: string
+        }
+        Returns: Database["public"]["Tables"]["stock_transfers"]["Row"]
+      }
       cancel_purchase_order: {
         Args: {
           p_po_id: string
           p_reason: string
         }
         Returns: Database["public"]["Tables"]["purchase_orders"]["Row"]
+      }
+      cancel_sales_order: {
+        Args: {
+          p_so_id: string
+          p_reason: string
+        }
+        Returns: Database["public"]["Tables"]["sales_orders"]["Row"]
+      }
+      cancel_stock_transfer: {
+        Args: {
+          p_transfer_id: string
+          p_reason: string
+        }
+        Returns: Database["public"]["Tables"]["stock_transfers"]["Row"]
+      }
+      complete_sales_order: {
+        Args: {
+          p_so_id: string
+        }
+        Returns: Database["public"]["Tables"]["sales_orders"]["Row"]
+      }
+      confirm_sales_order: {
+        Args: {
+          p_so_id: string
+        }
+        Returns: Database["public"]["Tables"]["sales_orders"]["Row"]
       }
       create_purchase_order: {
         Args: {
@@ -1382,6 +1555,17 @@ export type Database = {
           p_notes?: string
         }
         Returns: Database["public"]["Tables"]["purchase_orders"]["Row"]
+      }
+      create_sales_order: {
+        Args: {
+          p_customer_id: string
+          p_warehouse_id: string
+          p_items: Json
+          p_order_date?: string
+          p_requested_delivery_date?: string
+          p_notes?: string
+        }
+        Returns: Database["public"]["Tables"]["sales_orders"]["Row"]
       }
       create_stock_movement: {
         Args: {
@@ -1399,6 +1583,12 @@ export type Database = {
           p_unit_cost?: number
         }
         Returns: Database["public"]["Tables"]["stock_movements"]["Row"]
+      }
+      execute_stock_transfer: {
+        Args: {
+          p_transfer_id: string
+        }
+        Returns: Database["public"]["Tables"]["stock_transfers"]["Row"]
       }
       inventory_totals: {
         Args: {
@@ -1424,6 +1614,22 @@ export type Database = {
         }
         Returns: Database["public"]["Tables"]["goods_receipts"]["Row"]
       }
+      reject_stock_transfer: {
+        Args: {
+          p_transfer_id: string
+          p_reason: string
+        }
+        Returns: Database["public"]["Tables"]["stock_transfers"]["Row"]
+      }
+      request_stock_transfer: {
+        Args: {
+          p_source_warehouse_id: string
+          p_destination_warehouse_id: string
+          p_items: Json
+          p_notes?: string
+        }
+        Returns: Database["public"]["Tables"]["stock_transfers"]["Row"]
+      }
       reverse_goods_receipt: {
         Args: {
           p_goods_receipt_id: string
@@ -1431,12 +1637,32 @@ export type Database = {
         }
         Returns: Database["public"]["Tables"]["goods_receipts"]["Row"]
       }
+      reverse_sales_order_shipment: {
+        Args: {
+          p_so_id: string
+          p_reason: string
+        }
+        Returns: Database["public"]["Tables"]["sales_orders"]["Row"]
+      }
       reverse_stock_movement: {
         Args: {
           p_movement_id: string
           p_reason: string
         }
         Returns: Database["public"]["Tables"]["stock_movements"]["Row"]
+      }
+      ship_sales_order: {
+        Args: {
+          p_so_id: string
+          p_shipped_at?: string
+        }
+        Returns: Database["public"]["Tables"]["sales_orders"]["Row"]
+      }
+      start_processing_sales_order: {
+        Args: {
+          p_so_id: string
+        }
+        Returns: Database["public"]["Tables"]["sales_orders"]["Row"]
       }
       submit_purchase_order: {
         Args: {
@@ -1455,6 +1681,18 @@ export type Database = {
           p_notes?: string
         }
         Returns: Database["public"]["Tables"]["purchase_orders"]["Row"]
+      }
+      update_sales_order: {
+        Args: {
+          p_so_id: string
+          p_customer_id: string
+          p_warehouse_id: string
+          p_items: Json
+          p_order_date?: string
+          p_requested_delivery_date?: string
+          p_notes?: string
+        }
+        Returns: Database["public"]["Tables"]["sales_orders"]["Row"]
       }
     }
     Enums: {

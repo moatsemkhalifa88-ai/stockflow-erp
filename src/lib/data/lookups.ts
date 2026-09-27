@@ -80,17 +80,42 @@ export async function getSupplierOptions(): Promise<SupplierOption[]> {
   return rows.map((r) => ({ id: r.id, code: r.code, name: r.name, leadTimeDays: r.lead_time_days, isActive: r.is_active }));
 }
 
+export interface CustomerOption {
+  id: string;
+  code: string;
+  name: string;
+  paymentTermsDays: number;
+  isActive: boolean;
+}
+
+export async function getCustomerOptions(): Promise<CustomerOption[]> {
+  const supabase = await createClient();
+  const rows = unwrap(
+    await supabase.from("customers").select("id, code, name, payment_terms_days, is_active").order("name"),
+    "customers",
+  );
+  return rows.map((r) => ({ id: r.id, code: r.code, name: r.name, paymentTermsDays: r.payment_terms_days, isActive: r.is_active }));
+}
+
 export interface PricedProductOption extends ProductOption {
   costPrice: number;
+  salePrice: number;
 }
 
 export async function getPricedProductOptions(): Promise<PricedProductOption[]> {
   const supabase = await createClient();
   const rows = unwrap(
-    await supabase.from("products").select("id, sku, name, is_active, cost_price").order("sku").limit(1000),
+    await supabase.from("products").select("id, sku, name, is_active, cost_price, sale_price").order("sku").limit(1000),
     "products",
   );
-  return rows.map((r) => ({ id: r.id, sku: r.sku, name: r.name, isActive: r.is_active, costPrice: r.cost_price }));
+  return rows.map((r) => ({
+    id: r.id,
+    sku: r.sku,
+    name: r.name,
+    isActive: r.is_active,
+    costPrice: r.cost_price,
+    salePrice: r.sale_price,
+  }));
 }
 
 export async function getProductOptions(): Promise<ProductOption[]> {

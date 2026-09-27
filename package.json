@@ -15,7 +15,8 @@
     "db:types": "node node_modules/tsx/dist/cli.mjs scripts/generate-db-types.ts",
     "seed:users": "node node_modules/tsx/dist/cli.mjs scripts/seed-users.ts",
     "seed:stock": "node node_modules/tsx/dist/cli.mjs scripts/seed-stock.ts",
-    "seed:purchasing": "node node_modules/tsx/dist/cli.mjs scripts/seed-purchasing.ts"
+    "seed:purchasing": "node node_modules/tsx/dist/cli.mjs scripts/seed-purchasing.ts",
+    "seed:sales": "node node_modules/tsx/dist/cli.mjs scripts/seed-sales.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

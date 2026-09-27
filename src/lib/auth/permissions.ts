@@ -30,6 +30,21 @@ export function canReceiveGoods(role: AppRole): boolean {
   return role === "admin" || role === "warehouse_manager";
 }
 
+/** Mirrors the customers insert/update RLS policies (migration 11). */
+export function canManageCustomers(role: AppRole): boolean {
+  return role === "admin" || role === "sales";
+}
+
+/** Mirrors create_sales_order / update / confirm / cancel (migration 12). */
+export function canManageSalesOrders(role: AppRole): boolean {
+  return role === "admin" || role === "sales";
+}
+
+/** Mirrors request_stock_transfer (migration 13). */
+export function canRequestTransfers(role: AppRole): boolean {
+  return role === "admin" || role === "warehouse_manager";
+}
+
 /** Mirrors private.assert_can_move_stock(). */
 export function canMoveStock(role: AppRole): boolean {
   return role === "admin" || role === "warehouse_manager";

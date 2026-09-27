@@ -36,6 +36,14 @@ const CONSTRAINT_MESSAGES: Record<string, string> = {
   suppliers_email_check: "Enter a valid email address.",
   suppliers_payment_terms_days_check: "Payment terms must be between 0 and 365 days.",
   suppliers_lead_time_days_check: "Lead time must be between 0 and 365 days.",
+  customers_code_key: "A customer with this code already exists.",
+  customers_name_key: "A customer with this name already exists.",
+  customers_tax_id_key: "Another customer already uses this tax id.",
+  customers_code_check: "Code must be 2-20 characters: capital letters, digits and dashes.",
+  customers_email_check: "Enter a valid email address.",
+  customers_customer_type_check: "Choose a valid customer type.",
+  customers_credit_limit_check: "Credit limit cannot be negative.",
+  customers_payment_terms_days_check: "Payment terms must be between 0 and 365 days.",
 };
 
 export function describeDbError(error: DbError, fallback = "The operation could not be completed."): string {
