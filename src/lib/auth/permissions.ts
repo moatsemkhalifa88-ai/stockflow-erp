@@ -15,6 +15,21 @@ export function canManageWarehouses(role: AppRole): boolean {
   return role === "admin" || role === "warehouse_manager";
 }
 
+/** Mirrors the suppliers insert/update RLS policies (migration 09). */
+export function canManageSuppliers(role: AppRole): boolean {
+  return role === "admin" || role === "purchasing";
+}
+
+/** Mirrors create_purchase_order / update / submit / cancel (migration 10). */
+export function canManagePurchaseOrders(role: AppRole): boolean {
+  return role === "admin" || role === "purchasing";
+}
+
+/** Mirrors receive_goods / reverse_goods_receipt (migration 10). */
+export function canReceiveGoods(role: AppRole): boolean {
+  return role === "admin" || role === "warehouse_manager";
+}
+
 /** Mirrors private.assert_can_move_stock(). */
 export function canMoveStock(role: AppRole): boolean {
   return role === "admin" || role === "warehouse_manager";

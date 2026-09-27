@@ -63,6 +63,36 @@ export async function getWarehouseOptions(): Promise<WarehouseOption[]> {
   return rows.map((r) => ({ id: r.id, code: r.code, name: r.name, isActive: r.is_active }));
 }
 
+export interface SupplierOption {
+  id: string;
+  code: string;
+  name: string;
+  leadTimeDays: number;
+  isActive: boolean;
+}
+
+export async function getSupplierOptions(): Promise<SupplierOption[]> {
+  const supabase = await createClient();
+  const rows = unwrap(
+    await supabase.from("suppliers").select("id, code, name, lead_time_days, is_active").order("name"),
+    "suppliers",
+  );
+  return rows.map((r) => ({ id: r.id, code: r.code, name: r.name, leadTimeDays: r.lead_time_days, isActive: r.is_active }));
+}
+
+export interface PricedProductOption extends ProductOption {
+  costPrice: number;
+}
+
+export async function getPricedProductOptions(): Promise<PricedProductOption[]> {
+  const supabase = await createClient();
+  const rows = unwrap(
+    await supabase.from("products").select("id, sku, name, is_active, cost_price").order("sku").limit(1000),
+    "products",
+  );
+  return rows.map((r) => ({ id: r.id, sku: r.sku, name: r.name, isActive: r.is_active, costPrice: r.cost_price }));
+}
+
 export async function getProductOptions(): Promise<ProductOption[]> {
   const supabase = await createClient();
   const rows = unwrap(

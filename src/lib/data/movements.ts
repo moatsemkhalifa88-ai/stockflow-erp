@@ -25,6 +25,7 @@ export interface Movement {
   warehouseCode: string;
   warehouseName: string;
   referenceType: string | null;
+  referenceId: string | null;
   referenceNumber: string | null;
   reversalOfId: string | null;
   reversalOfNumber: string | null;
@@ -55,6 +56,7 @@ function toMovement(r: LedgerRow): Movement {
     warehouseCode: str(r.warehouse_code),
     warehouseName: str(r.warehouse_name),
     referenceType: r.reference_type,
+    referenceId: r.reference_id,
     referenceNumber: r.reference_number,
     reversalOfId: r.reversal_of_id,
     reversalOfNumber: r.reversal_of_number,

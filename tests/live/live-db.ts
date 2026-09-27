@@ -25,6 +25,8 @@ export interface Fixture {
   categoryId: string;
   warehouseId: string;
   productIds: string[];
+  /** Other rows a test created (e.g. a supplier) whose audit entries must be removed too. */
+  extraEntityIds: string[];
 }
 
 export function createLivePool(max: number): Pool {
@@ -48,9 +50,16 @@ export function createLivePool(max: number): Pool {
     ssl: isLocal ? false : caPath ? { ca: readFileSync(caPath, "utf8") } : { rejectUnauthorized: false },
     max,
     connectionTimeoutMillis: 20_000,
+    // Fail fast with a clear error if a pooled connection dies mid-query,
+    // instead of waiting minutes for the TCP connection to time out.
+    query_timeout: 60_000,
     application_name: "stockflow-concurrency-test",
   };
-  return new Pool(poolConfig);
+  const pool = new Pool(poolConfig);
+  // The pooler may close idle connections; pg reports that on the pool. Log it
+  // rather than letting it surface as an unhandled error in an unrelated test.
+  pool.on("error", (error) => console.warn(`[live-db] idle connection closed: ${error.message}`));
+  return pool;
 }
 
 /** Fails fast with a clear message when the Phase 2 migration is not on the target database. */
@@ -72,7 +81,8 @@ export async function beginAsUser(client: PoolClient, userId: string): Promise<v
   await client.query(
     `select set_config('request.jwt.claims', $1, true),
             set_config('request.jwt.claim.sub', $2, true),
-            set_config('lock_timeout', '20s', true)`,
+            set_config('lock_timeout', '20s', true),
+            set_config('statement_timeout', '45s', true)`,
     [JSON.stringify({ sub: userId, role: "authenticated" }), userId],
   );
   await client.query("set local role authenticated");
@@ -122,7 +132,11 @@ export async function postCommitted(
  * auth user (the profile trigger gives it the role), a category, a warehouse and
  * `productCount` products. Nothing existing is touched.
  */
-export async function createFixture(pool: Pool, productCount: number): Promise<Fixture> {
+export async function createFixture(
+  pool: Pool,
+  productCount: number,
+  role: "warehouse_manager" | "admin" = "warehouse_manager",
+): Promise<Fixture> {
   const runId = randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
   const userId = randomUUID();
   const client = await pool.connect();
@@ -131,8 +145,8 @@ export async function createFixture(pool: Pool, productCount: number): Promise<F
     await client.query(
       `insert into auth.users (id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
        values ($1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', $2,
-               '{"role":"warehouse_manager"}'::jsonb, '{"full_name":"Concurrency Test"}'::jsonb, now(), now())`,
-      [userId, `concurrency-${runId.toLowerCase()}@stockflow.test`],
+               jsonb_build_object('role', $3::text), '{"full_name":"Concurrency Test"}'::jsonb, now(), now())`,
+      [userId, `concurrency-${runId.toLowerCase()}@stockflow.test`, role],
     );
     const category = await client.query<{ id: string }>(
       "insert into public.categories (code, name) values ($1, $2) returning id",
@@ -152,7 +166,7 @@ export async function createFixture(pool: Pool, productCount: number): Promise<F
       productIds.push(product.rows[0].id);
     }
     await client.query("commit");
-    return { runId, userId, categoryId: category.rows[0].id, warehouseId: warehouse.rows[0].id, productIds };
+    return { runId, userId, categoryId: category.rows[0].id, warehouseId: warehouse.rows[0].id, productIds, extraEntityIds: [] };
   } catch (error) {
     await client.query("rollback");
     throw error;
@@ -194,6 +208,7 @@ export async function removeFixture(pool: Pool, fixture: Fixture): Promise<void>
       fixture.warehouseId,
       fixture.categoryId,
       fixture.userId,
+      ...fixture.extraEntityIds,
     ];
     await client.query("delete from public.audit_log where user_id = $1 or entity_id = any($2::text[])", [
       fixture.userId,
@@ -229,7 +244,7 @@ export async function leftovers(pool: Pool, fixture: Fixture): Promise<Record<st
       fixture.warehouseId,
       fixture.categoryId,
       fixture.userId,
-      [...fixture.productIds, fixture.warehouseId, fixture.categoryId, fixture.userId],
+      [...fixture.productIds, fixture.warehouseId, fixture.categoryId, fixture.userId, ...fixture.extraEntityIds],
     ],
   );
   return Object.fromEntries(Object.entries(result.rows[0]).map(([k, v]) => [k, Number(v)]));
@@ -251,4 +266,57 @@ export async function waitFor(check: () => Promise<boolean>, timeoutMs: number):
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
   return false;
+}
+
+/**
+ * Removes purchasing documents created for a supplier (receipts, lines, orders)
+ * and the supplier itself. Run BEFORE removeFixture: receipt lines reference the
+ * stock movements that removeFixture deletes.
+ *
+ * Lines of non-draft orders are frozen by a trigger, so this test-only cleanup
+ * switches that trigger off inside one transaction as the table owner (same
+ * approach and guarantees as removeFixture).
+ */
+export async function removePurchasing(pool: Pool, supplierId: string): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    await client.query("set local lock_timeout = '30s'");
+    await client.query("alter table public.purchase_order_items disable trigger purchase_order_items_enforce_rules");
+    await client.query(
+      `delete from public.goods_receipt_items where goods_receipt_id in (
+         select g.id from public.goods_receipts g join public.purchase_orders po on po.id = g.purchase_order_id
+         where po.supplier_id = $1)`,
+      [supplierId],
+    );
+    await client.query(
+      "delete from public.goods_receipts where purchase_order_id in (select id from public.purchase_orders where supplier_id = $1)",
+      [supplierId],
+    );
+    await client.query("delete from public.purchase_orders where supplier_id = $1", [supplierId]); // cascades to lines
+    await client.query("delete from public.suppliers where id = $1", [supplierId]);
+    await client.query("alter table public.purchase_order_items enable trigger purchase_order_items_enforce_rules");
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function purchasingLeftovers(pool: Pool, supplierId: string): Promise<number> {
+  const r = await pool.query<{ n: string }>(
+    `select (select count(*) from public.suppliers where id = $1)
+          + (select count(*) from public.purchase_orders where supplier_id = $1) as n`,
+    [supplierId],
+  );
+  return Number(r.rows[0].n);
+}
+
+export async function purchasingTriggerEnabled(pool: Pool): Promise<boolean> {
+  const r = await pool.query<{ n: string }>(
+    "select count(*) as n from pg_trigger where tgname = 'purchase_order_items_enforce_rules' and tgenabled = 'O'",
+  );
+  return Number(r.rows[0].n) === 1;
 }

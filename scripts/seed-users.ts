@@ -14,7 +14,7 @@ import type { Database } from "../src/types/database";
 config({ path: ".env.local" });
 config();
 
-type DemoRole = "admin" | "warehouse_manager";
+type DemoRole = "admin" | "warehouse_manager" | "purchasing";
 
 interface DemoUser {
   email: string;
@@ -28,6 +28,7 @@ const DEMO_USERS: DemoUser[] = [
   { email: "admin@stockflow.example", fullName: "Maya Cohen", role: "admin", manages: [] },
   { email: "manager.tlv@stockflow.example", fullName: "Eitan Levi", role: "warehouse_manager", manages: ["WH-TLV", "WH-ASH"] },
   { email: "manager.hfa@stockflow.example", fullName: "Noa Ben-Ami", role: "warehouse_manager", manages: ["WH-HFA", "WH-JLM", "WH-BSV"] },
+  { email: "purchasing@stockflow.example", fullName: "Dana Mizrahi", role: "purchasing", manages: [] },
 ];
 
 function requireEnv(name: string, fallbackName?: string): string {

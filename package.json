@@ -14,7 +14,8 @@
     "check": "npm run typecheck && npm run lint && npm run test",
     "db:types": "node node_modules/tsx/dist/cli.mjs scripts/generate-db-types.ts",
     "seed:users": "node node_modules/tsx/dist/cli.mjs scripts/seed-users.ts",
-    "seed:stock": "node node_modules/tsx/dist/cli.mjs scripts/seed-stock.ts"
+    "seed:stock": "node node_modules/tsx/dist/cli.mjs scripts/seed-stock.ts",
+    "seed:purchasing": "node node_modules/tsx/dist/cli.mjs scripts/seed-purchasing.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

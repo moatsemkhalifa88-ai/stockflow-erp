@@ -55,9 +55,9 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Purchasing",
     items: [
-      { label: "Purchase Orders", href: "/purchase-orders", icon: ClipboardList, roles: ["admin", "warehouse_manager", "purchasing"], available: false },
-      { label: "Goods Receipts", href: "/goods-receipts", icon: PackageCheck, roles: ["admin", "warehouse_manager", "purchasing"], available: false },
-      { label: "Suppliers", href: "/suppliers", icon: Truck, roles: ["admin", "purchasing"], available: false },
+      { label: "Purchase Orders", href: "/purchase-orders", icon: ClipboardList, roles: ["admin", "warehouse_manager", "purchasing"], available: true },
+      { label: "Goods Receipts", href: "/goods-receipts", icon: PackageCheck, roles: ["admin", "warehouse_manager", "purchasing"], available: true },
+      { label: "Suppliers", href: "/suppliers", icon: Truck, roles: ["admin", "purchasing"], available: true },
     ],
   },
   {

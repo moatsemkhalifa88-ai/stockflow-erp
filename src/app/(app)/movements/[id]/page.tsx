@@ -139,7 +139,16 @@ export default async function MovementDetailPage({ params }: PageProps<"/movemen
                 quantityChange={movement.quantityChange}
               />
             )}
-            {!movement.reversalOfId && !movement.reversedById && !reversible && (
+            {movement.referenceType === "GOODS_RECEIPT" && movement.referenceId && (
+              <p>
+                Posted by goods receipt{" "}
+                <Link href={`/goods-receipts/${movement.referenceId}`} className="font-mono font-medium text-brand-700 hover:underline">
+                  {movement.referenceNumber}
+                </Link>
+                . To correct it, reverse the goods receipt: that also updates the purchase order.
+              </p>
+            )}
+            {!movement.reversalOfId && !movement.reversedById && !reversible && movement.referenceType !== "GOODS_RECEIPT" && (
               <p className="flex gap-2 text-slate-500">
                 <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
                 Movements posted from a business document are corrected by cancelling that document.

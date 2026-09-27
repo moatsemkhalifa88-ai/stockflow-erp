@@ -228,6 +228,9 @@ export type Database = {
           notes: string | null
           created_at: string
           updated_at: string
+          reversed_at: string | null
+          reversed_by: string | null
+          reversal_reason: string | null
         }
         Insert: {
           id?: string
@@ -239,6 +242,9 @@ export type Database = {
           notes?: string | null
           created_at?: string
           updated_at?: string
+          reversed_at?: string | null
+          reversed_by?: string | null
+          reversal_reason?: string | null
         }
         Update: {
           id?: string
@@ -250,6 +256,9 @@ export type Database = {
           notes?: string | null
           created_at?: string
           updated_at?: string
+          reversed_at?: string | null
+          reversed_by?: string | null
+          reversal_reason?: string | null
         }
         Relationships: [
           {
@@ -262,6 +271,13 @@ export type Database = {
           {
             foreignKeyName: "goods_receipts_received_by_fkey"
             columns: ["received_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_receipts_reversed_by_fkey"
+            columns: ["reversed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1159,6 +1175,31 @@ export type Database = {
       }
     }
     Views: {
+      goods_receipt_overview: {
+        Row: {
+          id: string | null
+          receipt_number: string | null
+          purchase_order_id: string | null
+          po_number: string | null
+          supplier_id: string | null
+          supplier_name: string | null
+          warehouse_id: string | null
+          warehouse_code: string | null
+          warehouse_name: string | null
+          received_at: string | null
+          received_by: string | null
+          received_by_name: string | null
+          notes: string | null
+          line_count: number | null
+          total_quantity: number | null
+          total_value: number | null
+          reversed_at: string | null
+          reversed_by_name: string | null
+          reversal_reason: string | null
+          created_at: string | null
+        }
+        Relationships: []
+      }
       inventory_valuation: {
         Row: {
           inventory_id: string | null
@@ -1206,6 +1247,41 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_order_overview: {
+        Row: {
+          id: string | null
+          po_number: string | null
+          status: Database["public"]["Enums"]["purchase_order_status"] | null
+          supplier_id: string | null
+          supplier_code: string | null
+          supplier_name: string | null
+          warehouse_id: string | null
+          warehouse_code: string | null
+          warehouse_name: string | null
+          order_date: string | null
+          expected_delivery_date: string | null
+          currency: string | null
+          total_amount: number | null
+          notes: string | null
+          line_count: number | null
+          quantity_ordered: number | null
+          quantity_received: number | null
+          received_value: number | null
+          outstanding_value: number | null
+          created_by: string | null
+          created_by_name: string | null
+          submitted_at: string | null
+          approved_by: string | null
+          approved_by_name: string | null
+          approved_at: string | null
+          cancelled_at: string | null
+          cancel_reason: string | null
+          last_received_at: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
       stock_movement_ledger: {
         Row: {
           id: string | null
@@ -1240,6 +1316,29 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_purchase_summary: {
+        Row: {
+          supplier_id: string | null
+          code: string | null
+          name: string | null
+          contact_name: string | null
+          email: string | null
+          phone: string | null
+          city: string | null
+          country: string | null
+          payment_terms_days: number | null
+          lead_time_days: number | null
+          is_active: boolean | null
+          created_at: string | null
+          order_count: number | null
+          total_purchase_value: number | null
+          received_value: number | null
+          last_order_date: string | null
+          outstanding_count: number | null
+          outstanding_value: number | null
+        }
+        Relationships: []
+      }
       warehouse_stock_summary: {
         Row: {
           warehouse_id: string | null
@@ -1260,6 +1359,30 @@ export type Database = {
       }
     }
     Functions: {
+      approve_purchase_order: {
+        Args: {
+          p_po_id: string
+        }
+        Returns: Database["public"]["Tables"]["purchase_orders"]["Row"]
+      }
+      cancel_purchase_order: {
+        Args: {
+          p_po_id: string
+          p_reason: string
+        }
+        Returns: Database["public"]["Tables"]["purchase_orders"]["Row"]
+      }
+      create_purchase_order: {
+        Args: {
+          p_supplier_id: string
+          p_warehouse_id: string
+          p_items: Json
+          p_order_date?: string
+          p_expected_delivery_date?: string
+          p_notes?: string
+        }
+        Returns: Database["public"]["Tables"]["purchase_orders"]["Row"]
+      }
       create_stock_movement: {
         Args: {
           p_product_id: string
@@ -1292,12 +1415,46 @@ export type Database = {
           out_of_stock_count: number
         }[]
       }
+      receive_goods: {
+        Args: {
+          p_po_id: string
+          p_items: Json
+          p_notes?: string
+          p_received_at?: string
+        }
+        Returns: Database["public"]["Tables"]["goods_receipts"]["Row"]
+      }
+      reverse_goods_receipt: {
+        Args: {
+          p_goods_receipt_id: string
+          p_reason: string
+        }
+        Returns: Database["public"]["Tables"]["goods_receipts"]["Row"]
+      }
       reverse_stock_movement: {
         Args: {
           p_movement_id: string
           p_reason: string
         }
         Returns: Database["public"]["Tables"]["stock_movements"]["Row"]
+      }
+      submit_purchase_order: {
+        Args: {
+          p_po_id: string
+        }
+        Returns: Database["public"]["Tables"]["purchase_orders"]["Row"]
+      }
+      update_purchase_order: {
+        Args: {
+          p_po_id: string
+          p_supplier_id: string
+          p_warehouse_id: string
+          p_items: Json
+          p_order_date?: string
+          p_expected_delivery_date?: string
+          p_notes?: string
+        }
+        Returns: Database["public"]["Tables"]["purchase_orders"]["Row"]
       }
     }
     Enums: {

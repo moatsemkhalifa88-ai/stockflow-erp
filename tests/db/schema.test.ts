@@ -199,6 +199,7 @@ describe("data integrity constraints", () => {
       [supplierId, warehouseId],
     );
     expect(po.rows[0].po_number).toMatch(/^PO-\d{6}$/);
+    // New lines always start at 0 received (workflow trigger, migration 10) ...
     await expect(
       db.query(
         `insert into public.purchase_order_items
@@ -206,6 +207,18 @@ describe("data integrity constraints", () => {
          values ($1, 1, $2, 10, 11, 32)`,
         [po.rows[0].id, productId],
       ),
+    ).rejects.toThrow(/cannot have received quantities/);
+
+    // ... and on an approved order the CHECK constraint still caps received at ordered.
+    const line = await db.query<{ id: string }>(
+      `insert into public.purchase_order_items (purchase_order_id, line_number, product_id, quantity_ordered, unit_cost)
+       values ($1, 1, $2, 10, 32) returning id`,
+      [po.rows[0].id, productId],
+    );
+    await db.query("update public.purchase_orders set status = 'SUBMITTED', submitted_at = now() where id = $1", [po.rows[0].id]);
+    await db.query("update public.purchase_orders set status = 'APPROVED', approved_at = now() where id = $1", [po.rows[0].id]);
+    await expect(
+      db.query("update public.purchase_order_items set quantity_received = 11 where id = $1", [line.rows[0].id]),
     ).rejects.toThrow(/purchase_order_items_received_range/);
   });
 

@@ -3,8 +3,9 @@
 An inventory and warehouse management system built as a realistic internal business application:
 multi-warehouse stock, purchasing, sales, transfers, and a fully audited stock ledger.
 
-> **Status:** Phase 2 of 6 is complete. Phase 1 delivered the foundation (schema, auth, roles, RLS, app shell, demo data).
-> Phase 2 adds the inventory engine plus the products, warehouses, inventory and stock-movement modules.
+> **Status:** Phase 3 of 6 is complete. Phase 1 delivered the foundation (schema, auth, roles, RLS, app shell, demo data),
+> Phase 2 the inventory engine and the products, warehouses, inventory and stock-movement modules, and Phase 3 the
+> purchasing workflow: suppliers, purchase orders with approval, and goods receipts that post stock through the engine.
 > See the [roadmap](#roadmap).
 
 ## Tech stack
@@ -71,6 +72,7 @@ Under **Authentication → Sign In / Providers**, turn off "Allow new users to s
 ```bash
 npm run seed:users          # creates the demo accounts (needs SUPABASE_SERVICE_ROLE_KEY)
 npm run seed:stock          # optional: opening balances, posted through the inventory engine
+npm run seed:purchasing     # optional: 20 purchase orders in mixed statuses, received through the workflow
 npm run dev                 # http://localhost:3000
 ```
 
@@ -83,6 +85,7 @@ Password for all accounts: `StockFlow!2026` (override with `DEMO_USER_PASSWORD`)
 | `admin@stockflow.example`       | Administrator     | none                      |
 | `manager.tlv@stockflow.example` | Warehouse Manager | Tel Aviv, Ashdod          |
 | `manager.hfa@stockflow.example` | Warehouse Manager | Haifa, Jerusalem, Be'er Sheva |
+| `purchasing@stockflow.example`  | Purchasing        | none                      |
 
 ## Environment variables
 
@@ -91,7 +94,7 @@ Password for all accounts: `StockFlow!2026` (override with `DEMO_USER_PASSWORD`)
 | `NEXT_PUBLIC_SUPABASE_URL`             | browser + server   | Supabase API URL                                               |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | browser + server   | Publishable key (`sb_publishable_…`) or legacy anon key. `NEXT_PUBLIC_SUPABASE_ANON_KEY` is also accepted |
 | `SUPABASE_SERVICE_ROLE_KEY`            | `seed:users` only  | Secret / service-role key. **Never** exposed to the browser    |
-| `DEMO_USER_PASSWORD`                   | `seed:users`, `seed:stock` | Optional password for demo accounts                    |
+| `DEMO_USER_PASSWORD`                   | `seed:*` scripts   | Optional password for demo accounts                            |
 | `DATABASE_URL`                         | `test:live` only   | Postgres connection string (Session pooler). **Secret**; see [Concurrency test](#concurrency-test-real-postgresql) |
 | `DATABASE_CA_CERT`                     | `test:live` only   | Optional path to Supabase CA certificate to verify TLS         |
 
@@ -109,6 +112,7 @@ Password for all accounts: `StockFlow!2026` (override with `DEMO_USER_PASSWORD`)
 | `npm run db:types`   | Regenerate `src/types/database.ts` from the migrations                  |
 | `npm run seed:users` | Create or update the demo login accounts                                |
 | `npm run seed:stock` | Post demo opening balances through `create_stock_movement` (empty ledger only) |
+| `npm run seed:purchasing` | 20 demo purchase orders through the workflow RPCs (only when there are none) |
 
 > The npm scripts call each tool's JavaScript entry point through `node` rather than the `node_modules/.bin`
 > shims, because the Windows `.cmd` shims break when the project path contains `&`.
@@ -127,6 +131,8 @@ Migrations live in [`supabase/migrations`](supabase/migrations) and are applied 
 | `…0600_rls`          | privileges and Row Level Security policies                                                |
 | `…0700_inventory_engine` | `create_stock_movement`, `reverse_stock_movement`, SKU lock, valuation and summary views |
 | `…0800_warehouse_editing_inventory_totals` | warehouse managers maintain warehouses, manager validation, warehouse code lock, `inventory_totals()` |
+| `20260926…0100_purchasing_role` | `purchasing` role; suppliers maintained by admins and purchasing |
+| `20260926…0200_purchasing_workflow` | PO workflow RPCs, status-machine triggers, `receive_goods`, `reverse_goods_receipt`, purchasing views |
 
 **Movement types:** `PURCHASE_RECEIPT`, `SALE`, `TRANSFER_IN`, `TRANSFER_OUT`, `ADJUSTMENT_IN`, `ADJUSTMENT_OUT`, `RETURN`.
 
@@ -134,20 +140,24 @@ A full ER diagram will be added in Phase 6.
 
 ### Roles and access
 
-| Capability                              | Admin | Warehouse Manager |
-| --------------------------------------- | :---: | :---------------: |
-| Read operational data                   |  ✅   |        ✅         |
-| Create / edit products and categories   |  ✅   |        ✅         |
-| Create / edit / deactivate warehouses   |  ✅   |        ✅         |
-| Create / edit suppliers and customers   |  ✅   |        –          |
-| Manage users (profiles, roles)          |  ✅   |        –          |
-| Read the audit log                      |  ✅   |        –          |
-| Post stock adjustments and reversals    |  ✅   |        ✅         |
-| Write inventory / movements directly    |  –    |        –          |
-| Hard-delete anything                    |  –    |        –          |
+| Capability                                    | Admin | Warehouse Manager | Purchasing |
+| --------------------------------------------- | :---: | :---------------: | :--------: |
+| Read operational data                         |  ✅   |        ✅         |     ✅     |
+| Create / edit products and categories         |  ✅   |        ✅         |     –      |
+| Create / edit / deactivate warehouses         |  ✅   |        ✅         |     –      |
+| Create / edit / deactivate suppliers          |  ✅   |        –          |     ✅     |
+| Create, edit, submit and cancel purchase orders |  ✅   |        –          |     ✅     |
+| Approve purchase orders                       |  ✅   |        –          |     –      |
+| Receive goods, reverse goods receipts         |  ✅   |        ✅         |     –      |
+| Post stock adjustments and reversals          |  ✅   |        ✅         |     –      |
+| Create / edit customers                       |  ✅   |        –          |     –      |
+| Manage users (profiles, roles)                |  ✅   |        –          |     –      |
+| Read the audit log                            |  ✅   |        –          |     –      |
+| Write inventory / movements / documents directly |  –    |        –          |     –      |
+| Hard-delete anything                          |  –    |        –          |     –      |
 
 Unauthenticated users have no access to any table. Deactivated users can only read their own profile.
-The `roles` table is designed so that `purchasing` (Phase 3) and `sales` (Phase 4) are simply new rows plus policies.
+The `roles` table is designed so that `sales` (Phase 4) is simply a new row plus policies, as `purchasing` was in Phase 3.
 
 ## Inventory engine
 
@@ -206,6 +216,68 @@ the figures always agree. The summary cards on the Inventory page come from `inv
 same warehouse, category, status and search filters as the list, so the cards always describe the rows shown. **Stock status:** *Out of Stock* at 0, *Low Stock* at or below the product's
 minimum stock level, otherwise *In Stock*.
 
+## Purchasing workflow
+
+Buying stock follows four steps. Each step is a PostgreSQL function, so the rules hold no matter how the
+database is called.
+
+```
+ Purchase order ──approve──▶ Goods receipt ──▶ Stock movement ──▶ Inventory
+ (what we ordered)           (what arrived)    (one per line)     (what we have)
+```
+
+1. **Purchase order.** Someone in purchasing creates an order: a supplier, a destination warehouse, dates, and
+   lines of product × quantity × unit cost. The PO number and total are filled in by the database. A new order
+   is a **Draft** and can be changed freely.
+2. **Submit and approve.** Submitting freezes the order: its lines and header can no longer change. Only an
+   **administrator** can approve it. Nothing has touched stock yet.
+3. **Goods receipt.** When the delivery arrives, a warehouse manager opens the approved order and enters what
+   actually came in, line by line. A delivery can be partial. `receive_goods` then does all of this as **one
+   transaction**:
+   - locks the purchase order, so two people receiving the same order at the same time are handled one after
+     the other;
+   - refuses any line that would take the received quantity above the ordered quantity;
+   - creates the goods receipt (GR number) and its lines;
+   - for every line, calls the inventory engine's `create_stock_movement` with type `PURCHASE_RECEIPT`, at the
+     PO's unit cost. **The engine is what changes inventory**: it locks the stock row, writes the ledger and
+     audits it, exactly as for any other movement;
+   - adds the quantities to the order lines and moves the order to **Partially received** or **Received**;
+   - writes an audit-log entry for the receipt.
+4. **Inventory.** The new stock is visible straight away on the Inventory, Product and Warehouse pages and in
+   the stock ledger, where each movement links back to its goods receipt.
+
+### Statuses
+
+```
+Draft ─▶ Submitted ─▶ Approved ─▶ Partially received ─▶ Received
+  │          │           │
+  └──────────┴───────────┴─▶ Cancelled   (only while nothing has been received)
+```
+
+A trigger on `purchase_orders` only allows these transitions and checks that the received quantities match the
+status. For example, an order cannot be marked *Received* while lines are still open. Another trigger freezes
+order lines once the order leaves *Draft*. Invalid steps are rejected even for direct SQL.
+
+### Cancelling and correcting
+
+- **Cancelling** is allowed only before anything is received. It never touches inventory; it only records who
+  cancelled, when and why.
+- **After goods are received**, the order can no longer be cancelled. If a delivery was wrong, **reverse the
+  goods receipt** (`reverse_goods_receipt`). It calls the engine's existing `reverse_stock_movement` for each
+  line: stock goes back out with opposite movements, the order's received quantities go down, and the status
+  goes back (for example *Received* → *Partially received*). The receipt and all movements stay in the history.
+  If the received stock has already been sold or used, the reversal is refused, because stock would go negative.
+  Once every receipt is reversed, the order can be cancelled.
+- Goods-receipt movements cannot be posted or reversed on their own through the engine. A trigger only allows
+  them inside `receive_goods` / `reverse_goods_receipt`, so an order and its stock can never drift apart.
+
+### Supplier figures
+
+A supplier's **total purchase value** is the sum of its approved, partially received and received orders.
+Drafts, submitted and cancelled orders don't count. **Outstanding orders** are submitted, approved or
+partially received orders; their outstanding value is what is still to be delivered. The
+`supplier_purchase_summary` view calculates both.
+
 ## Testing
 
 ```bash
@@ -228,6 +300,9 @@ Supabase stub (roles, `auth.users`, `auth.uid()`), then every migration and the 
 - `inventory_valuation` values stock correctly and the product / warehouse totals agree with it
 - only admins and warehouse managers can call the engine; anonymous and deactivated users, other roles and
   direct table writes are all rejected
+- purchasing: full receipt, partial receipt then completion, over-receipt rejected (nothing changes), cancel
+  before receipt (inventory untouched), no cancel after receipt, goods-receipt reversal, invalid status
+  transitions rejected (including direct SQL), frozen lines, and what each role may do
 
 ### Concurrency test (real PostgreSQL)
 
@@ -239,7 +314,10 @@ the same inventory row**:
   second sees the new quantity and is rejected;
 - 8 parallel withdrawals of 1 from a stock of 5: exactly 5 succeed, each seeing a different starting quantity;
 - 4 parallel first receipts for a new location create exactly one inventory row;
-- 2 parallel reversals of the same movement: exactly one succeeds.
+- 2 parallel reversals of the same movement: exactly one succeeds;
+- two people receiving 7 of the same 10-unit order line: the second waits for the first, then is refused
+  ("only 3 outstanding");
+- 4 parallel receipts of 3 against 10 ordered: exactly 3 succeed.
 
 It creates its own user, category, warehouse and products under a random run id and deletes all of them
 afterwards, including their ledger and audit rows. To do that, it switches off the append-only triggers
@@ -268,7 +346,10 @@ src/
       products/       # list, detail, new, edit
       inventory/      # stock per product + warehouse with status and value
       movements/      # ledger, adjustment form, movement detail + reversal
-      warehouses/     # list and detail
+      warehouses/     # list, detail, new, edit
+      suppliers/      # list, detail, new, edit
+      purchase-orders/ # list, detail, new, edit, receive
+      goods-receipts/ # list and detail (with reversal)
     login/            # sign-in page + form (Server Action)
   components/
     layout/           # app shell: sidebar, top bar, breadcrumbs, user menu
@@ -281,7 +362,7 @@ src/
 supabase/
   migrations/         # SQL schema
   seed.sql            # demo master data
-scripts/              # seed-users, seed-stock, generate-db-types
+scripts/              # seed-users, seed-stock, seed-purchasing, generate-db-types
 tests/db/             # PGlite test harness and DB tests (schema, RLS, inventory engine)
 tests/live/           # concurrency tests against a real PostgreSQL (npm run test:live)
 tests/unit/           # validation and helper unit tests
@@ -291,7 +372,7 @@ tests/unit/           # validation and helper unit tests
 
 - [x] **Phase 1: Foundation.** Schema, auth, roles, RLS, app shell, seed data
 - [x] **Phase 2: Inventory engine.** `create_stock_movement`, reversals, products, warehouses, inventory, adjustments
-- [ ] **Phase 3: Purchasing.** Suppliers, purchase-order workflow, `receive_goods`
+- [x] **Phase 3: Purchasing.** Suppliers, purchase-order workflow, `receive_goods`
 - [ ] **Phase 4: Sales and transfers.** Customers, sales orders, `ship_sales_order`, warehouse transfers
 - [ ] **Phase 5: Analytics.** Dashboard KPIs and charts, alerts, reports with CSV export, audit-log UI, BI views
 - [ ] **Phase 6: Polish.** Full documentation, ER diagram, screenshots, Power BI

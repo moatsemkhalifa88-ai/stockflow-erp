@@ -49,7 +49,21 @@ export function formatDateTime(value: string | Date): string {
   return dateTimeFormatter.format(new Date(value));
 }
 
-const offsetFormatter = new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, timeZoneName: "longOffset" });
+const isoDayFormatter = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" });
+
+/** Today's date (yyyy-mm-dd) in business time. */
+export function businessToday(now: Date = new Date()): string {
+  return isoDayFormatter.format(now);
+}
+
+/** Adds whole days to a yyyy-mm-dd date. */
+export function addDays(day: string, days: number): string {
+  const date = new Date(`${day}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+const offsetFormatter =new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, timeZoneName: "longOffset" });
 
 /** UTC offset of the business time zone on a given day, e.g. "+03:00" in summer and "+02:00" in winter. */
 function businessOffset(day: string): string {
