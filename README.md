@@ -419,7 +419,7 @@ anonymous visitors get nothing.
 | Create / edit / deactivate suppliers | ✅ | – | ✅ | – |
 | Create, edit, submit, cancel purchase orders | ✅ | – | ✅ | – |
 | Approve purchase orders | ✅ | – | – | – |
-| Receive goods, reverse goods receipts | ✅ | ✅ | – | – |
+| Receive goods, reverse goods receipts (see *Segregation of duties*) | ✅ | ✅ | – | – |
 | Create / edit / deactivate customers | ✅ | – | – | ✅ |
 | Create, edit, confirm, cancel sales orders | ✅ | – | – | ✅ |
 | Process and ship orders, reverse shipments | ✅ | ✅ | – | – |
@@ -431,6 +431,20 @@ anonymous visitors get nothing.
 
 The whole table is tested for every role (`tests/db/roles.test.ts`). The same test also checks that the UI's
 permission helpers, which decide which buttons appear, match what the database allows.
+
+**Segregation of duties.** The table deliberately splits each purchase across three roles.
+
+- **Purchasing** creates and submits purchase orders.
+- **An administrator** approves them.
+- **A warehouse manager** confirms that the goods physically arrived.
+
+Purchasing can't receive goods. Otherwise one person could order goods and confirm a delivery that never
+happened, and stock and supplier spend would be inflated with nobody else noticing. Receiving is checked in two
+places: `receive_goods` and `reverse_goods_receipt` refuse the purchasing role in the database, and the UI hides
+the button. A purchasing user sees open orders in the *Awaiting delivery* list, with a note saying who receives
+them. Sales follows the same split: sales confirms orders, and the warehouse ships them. Administrators can do
+everything, which suits a small demo team. In a real company that full access would be limited to very few
+people, and the audit log would show when one person both approved and received an order.
 
 ## Screenshots
 
