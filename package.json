@@ -18,7 +18,8 @@
     "seed:purchasing": "node node_modules/tsx/dist/cli.mjs scripts/seed-purchasing.ts",
     "seed:sales": "node node_modules/tsx/dist/cli.mjs scripts/seed-sales.ts",
     "seed:demo": "npm run seed:users && npm run seed:stock && npm run seed:purchasing && npm run seed:sales",
-    "smoke": "node node_modules/tsx/dist/cli.mjs scripts/smoke.ts"
+    "smoke": "node node_modules/tsx/dist/cli.mjs scripts/smoke.ts",
+    "verify:deploy": "node node_modules/tsx/dist/cli.mjs scripts/verify-deploy.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -42,6 +43,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "pg": "^8.23.0",
+    "playwright": "^1.63.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",
