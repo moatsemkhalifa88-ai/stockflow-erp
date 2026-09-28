@@ -17,7 +17,7 @@ import { getActiveUser } from "@/lib/auth/session";
 import { getReceiptsForPurchaseOrder } from "@/lib/data/goods-receipts";
 import { getPurchaseOrderLines, getPurchaseOrderSummary, isOverdue } from "@/lib/data/purchase-orders";
 import { businessToday, formatCurrency, formatDate, formatDateTime, formatNumber } from "@/lib/format";
-import { allowedActions } from "@/lib/purchasing";
+import { allowedActions, canPerform } from "@/lib/purchasing";
 import { isUuid } from "@/lib/search-params";
 
 export const metadata: Metadata = { title: "Purchase order" };
@@ -35,6 +35,9 @@ export default async function PurchaseOrderDetailPage({ params }: PageProps<"/pu
   if (!po) notFound();
 
   const actions = user ? allowedActions(user.role, po.status) : [];
+  // Receivable, but not by this user: say who receives instead of showing nothing.
+  const receivableByOthers =
+    (po.status === "APPROVED" || po.status === "PARTIALLY_RECEIVED") && user !== null && !canPerform("receive", user.role, po.status);
   const overdue = isOverdue(po, businessToday());
 
   const timeline: { label: string; at: string | null; by?: string | null }[] = [
@@ -67,6 +70,13 @@ export default async function PurchaseOrderDetailPage({ params }: PageProps<"/pu
         <PoWorkflowActions poId={po.id} poNumber={po.poNumber} actions={actions} />
       </div>
 
+      {receivableByOthers && (
+        <p role="note" className="mb-6 flex items-start gap-2 rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-slate-700">
+          <PackageCheck aria-hidden className="mt-0.5 size-4 shrink-0 text-brand-600" />
+          Waiting for delivery. Goods are received against this order by a warehouse manager or an administrator, from
+          this page or the Goods Receipts page.
+        </p>
+      )}
       {po.status === "CANCELLED" && po.cancelReason && (
         <p role="note" className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           Cancelled: {po.cancelReason}

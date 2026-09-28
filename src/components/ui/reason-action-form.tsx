@@ -1,10 +1,17 @@
 "use client";
 
-import type { LucideIcon } from "lucide-react";
+import { RotateCcw, XCircle } from "lucide-react";
 import { useActionState, useState, type ReactNode } from "react";
 import type { ReasonFormState } from "@/lib/actions/types";
 import { Button, type ButtonVariant } from "./button";
 import { FormField } from "./form-field";
+
+/**
+ * Icons are chosen by name, not passed as components: this is a Client
+ * Component, and Server Components can only pass it serializable props.
+ */
+const ICONS = { reverse: RotateCcw, cancel: XCircle } as const;
+export type ReasonActionIcon = keyof typeof ICONS;
 
 /**
  * Two-step destructive action (cancel, reverse): a button that opens an inline
@@ -14,7 +21,7 @@ import { FormField } from "./form-field";
 export function ReasonActionForm({
   action,
   triggerLabel,
-  triggerIcon: Icon,
+  triggerIcon,
   triggerVariant = "secondary",
   explanation,
   reasonLabel,
@@ -24,7 +31,7 @@ export function ReasonActionForm({
 }: {
   action: (state: ReasonFormState, formData: FormData) => Promise<ReasonFormState>;
   triggerLabel: string;
-  triggerIcon?: LucideIcon;
+  triggerIcon?: ReasonActionIcon;
   triggerVariant?: ButtonVariant;
   explanation: ReactNode;
   reasonLabel: string;
@@ -35,6 +42,7 @@ export function ReasonActionForm({
 }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(action, {});
+  const Icon = triggerIcon ? ICONS[triggerIcon] : null;
 
   if (!open) {
     return (

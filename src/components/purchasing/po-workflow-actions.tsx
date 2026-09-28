@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, PackageCheck, Pencil, Send, XCircle } from "lucide-react";
+import { CheckCircle2, PackageCheck, Pencil, Send } from "lucide-react";
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { LinkButton } from "@/components/ui/link-button";
@@ -68,7 +68,7 @@ export function PoWorkflowActions({
           action={cancelPurchaseOrder.bind(null, poId)}
           idPrefix="cancel-po"
           triggerLabel="Cancel order"
-          triggerIcon={XCircle}
+          triggerIcon="cancel"
           reasonLabel="Reason for cancelling"
           placeholder="e.g. Supplier cannot deliver on time"
           submitLabel="Cancel order"

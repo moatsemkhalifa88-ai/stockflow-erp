@@ -1,6 +1,7 @@
 import { PackageCheck } from "lucide-react";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
+import { AwaitingDelivery } from "@/components/purchasing/awaiting-delivery";
 import { ReceiptTable } from "@/components/purchasing/receipt-table";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -8,8 +9,12 @@ import { FilterBar } from "@/components/ui/filter-bar";
 import { FormField } from "@/components/ui/form-field";
 import { Pagination } from "@/components/ui/pagination";
 import { SelectField } from "@/components/ui/select-field";
+import { canReceiveGoods } from "@/lib/auth/permissions";
+import { getActiveUser } from "@/lib/auth/session";
 import { listGoodsReceipts, type GoodsReceiptFilters } from "@/lib/data/goods-receipts";
 import { getSupplierOptions, getWarehouseOptions } from "@/lib/data/lookups";
+import { getPurchaseOrdersAwaitingDelivery } from "@/lib/data/purchase-orders";
+import { businessToday } from "@/lib/format";
 import { buildHref, getDateParam, getPageParam, getSearchParam, getUuidParam, PAGE_SIZE } from "@/lib/search-params";
 
 export const metadata: Metadata = { title: "Goods Receipts" };
@@ -25,10 +30,12 @@ export default async function GoodsReceiptsPage({ searchParams }: PageProps<"/go
     page: getPageParam(params),
   };
 
-  const [suppliers, warehouses, receipts] = await Promise.all([
+  const [user, suppliers, warehouses, receipts, awaiting] = await Promise.all([
+    getActiveUser(),
     getSupplierOptions(),
     getWarehouseOptions(),
     listGoodsReceipts(filters),
+    getPurchaseOrdersAwaitingDelivery(),
   ]);
   const isFiltered = Boolean(filters.q || filters.warehouseId || filters.supplierId || filters.from || filters.to);
 
@@ -36,8 +43,9 @@ export default async function GoodsReceiptsPage({ searchParams }: PageProps<"/go
     <>
       <PageHeader
         title="Goods Receipts"
-        description="Deliveries received against purchase orders. Receive goods from an approved purchase order."
+        description="Deliveries received against approved purchase orders. Each receipt posts its lines to the stock ledger."
       />
+      <AwaitingDelivery orders={awaiting} canReceive={user !== null && canReceiveGoods(user.role)} today={businessToday()} />
       <Card>
         <FilterBar
           action="/goods-receipts"
@@ -70,7 +78,7 @@ export default async function GoodsReceiptsPage({ searchParams }: PageProps<"/go
           <EmptyState
             icon={PackageCheck}
             title={isFiltered ? "No receipts match these filters" : "No goods received yet"}
-            description={isFiltered ? "Try a different search or reset the filters." : "Open an approved purchase order and choose Receive goods."}
+            description={isFiltered ? "Try a different search or reset the filters." : "Receipts appear here once goods are received against an order above."}
           />
         ) : (
           <ReceiptTable receipts={receipts.rows} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ClipboardCheck, Pencil, PlayCircle, RotateCcw, Truck, XCircle } from "lucide-react";
+import { CheckCircle2, ClipboardCheck, Pencil, PlayCircle, Truck } from "lucide-react";
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { LinkButton } from "@/components/ui/link-button";
@@ -85,7 +85,7 @@ export function SoWorkflowActions({
           action={reverseSalesOrderShipment.bind(null, soId)}
           idPrefix="reverse-shipment"
           triggerLabel="Reverse shipment"
-          triggerIcon={RotateCcw}
+          triggerIcon="reverse"
           reasonLabel="Reason for reversal"
           placeholder="e.g. Customer refused the delivery"
           submitLabel="Reverse shipment"
@@ -102,7 +102,7 @@ export function SoWorkflowActions({
           action={cancelSalesOrder.bind(null, soId)}
           idPrefix="cancel-so"
           triggerLabel="Cancel order"
-          triggerIcon={XCircle}
+          triggerIcon="cancel"
           reasonLabel="Reason for cancelling"
           placeholder="e.g. Customer withdrew the order"
           submitLabel="Cancel order"

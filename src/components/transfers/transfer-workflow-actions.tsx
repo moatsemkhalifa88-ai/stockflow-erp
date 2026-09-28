@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, PlayCircle, XCircle } from "lucide-react";
+import { CheckCircle2, PlayCircle } from "lucide-react";
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { ReasonActionForm } from "@/components/ui/reason-action-form";
@@ -51,7 +51,7 @@ export function TransferWorkflowActions({
           action={rejectTransfer.bind(null, transferId)}
           idPrefix="reject-transfer"
           triggerLabel="Reject"
-          triggerIcon={XCircle}
+          triggerIcon="cancel"
           reasonLabel="Reason for rejecting"
           placeholder="e.g. Destination has enough stock"
           submitLabel="Reject transfer"
@@ -63,7 +63,7 @@ export function TransferWorkflowActions({
           action={cancelTransfer.bind(null, transferId)}
           idPrefix="cancel-transfer"
           triggerLabel="Cancel"
-          triggerIcon={XCircle}
+          triggerIcon="cancel"
           reasonLabel="Reason for cancelling"
           placeholder="e.g. Truck not available"
           submitLabel="Cancel transfer"

@@ -1,4 +1,3 @@
-import { RotateCcw } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -125,7 +124,7 @@ export default async function GoodsReceiptDetailPage({ params }: PageProps<"/goo
                 action={reverseGoodsReceipt.bind(null, receipt.id)}
                 idPrefix="reverse-receipt"
                 triggerLabel="Reverse receipt"
-                triggerIcon={RotateCcw}
+                triggerIcon="reverse"
                 reasonLabel="Reason for reversal"
                 placeholder="e.g. Delivery returned to supplier"
                 submitLabel="Reverse receipt"

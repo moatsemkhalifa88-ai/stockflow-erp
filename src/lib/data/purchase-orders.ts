@@ -114,6 +114,22 @@ export async function getPurchaseOrderSummary(id: string): Promise<PurchaseOrder
   return result.data ? toSummary(result.data) : null;
 }
 
+/** Approved or partially received orders: the ones goods can be received against. Oldest expected first. */
+export async function getPurchaseOrdersAwaitingDelivery(limit = 50): Promise<PurchaseOrderSummary[]> {
+  const supabase = await createClient();
+  const rows = unwrap(
+    await supabase
+      .from("purchase_order_overview")
+      .select("*")
+      .in("status", ["APPROVED", "PARTIALLY_RECEIVED"])
+      .order("expected_delivery_date", { ascending: true, nullsFirst: false })
+      .order("po_number")
+      .limit(limit),
+    "purchase orders awaiting delivery",
+  );
+  return rows.map(toSummary);
+}
+
 export async function getRecentPurchaseOrders(supplierId: string, limit = 15): Promise<PurchaseOrderSummary[]> {
   const supabase = await createClient();
   const rows = unwrap(

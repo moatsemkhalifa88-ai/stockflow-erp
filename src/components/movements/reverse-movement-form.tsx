@@ -1,6 +1,5 @@
 "use client";
 
-import { RotateCcw } from "lucide-react";
 import { ReasonActionForm } from "@/components/ui/reason-action-form";
 import { reverseMovement } from "@/lib/actions/movements";
 import { formatNumber } from "@/lib/format";
@@ -21,7 +20,7 @@ export function ReverseMovementForm({
       action={reverseMovement.bind(null, movementId)}
       idPrefix="reverse-movement"
       triggerLabel="Reverse movement"
-      triggerIcon={RotateCcw}
+      triggerIcon="reverse"
       reasonLabel="Reason for reversal"
       placeholder="e.g. Posted to the wrong warehouse"
       submitLabel="Reverse"

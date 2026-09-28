@@ -309,7 +309,8 @@ workflow, so an order and its stock can never drift apart.
 1. **Purchase order.** Purchasing enters a supplier, a destination warehouse, dates and lines. The database
    numbers the order and totals it. A new order is a **Draft**.
 2. **Submit.** The lines and header are frozen. An **administrator approves** the order.
-3. **Receive.** A warehouse manager enters what actually arrived, which may be a partial delivery.
+3. **Receive.** From the order, or from the *Awaiting delivery* list on the Goods Receipts page, a warehouse
+   manager enters what actually arrived, which may be a partial delivery.
    `receive_goods` does the following in one transaction:
    - locks the order, so two receivers are handled one after the other;
    - refuses any over-receipt;
@@ -526,6 +527,7 @@ Password for all accounts: `StockFlow!2026` (override with `DEMO_USER_PASSWORD`)
 npm run check          # typecheck + lint + all offline tests
 npm test               # offline tests only
 npm run test:live      # concurrency and live-data tests (needs DATABASE_URL)
+npm run smoke          # render every page as every role (needs a running server, see below)
 ```
 
 **Offline suite (320+ tests, no Docker).** Each test file gets a brand-new embedded PostgreSQL
@@ -544,6 +546,13 @@ checks the following:
   coverage of every workflow.
 - **Role matrix:** every role × every table write and workflow function; database vs UI permission helpers.
 - **Unit:** validators, CSV escaping and formula guard, date ranges, business-date handling.
+
+**Render smoke check.** `npm run build`, then `npm run start -- -p 3100`, then `npm run smoke`. It signs in as each
+demo role and renders every page, including detail pages in the states that show action buttons (about 250
+renders). A Server Component that crashes still returns HTTP 200 and streams the error to the browser, so the
+check looks for that error row in the response. A unit test (`rsc-boundaries`) also parses every Server
+Component and fails if a function or icon component is passed to a Client Component, a bug that type-checks
+and builds but breaks at render time.
 
 **Live suite (real PostgreSQL connection pool).** PGlite has a single connection, so row locking is proven
 against the hosted database:
