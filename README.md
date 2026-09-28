@@ -448,20 +448,35 @@ people, and the audit log would show when one person both approved and received 
 
 ## Screenshots
 
-> Save screenshots to `docs/screenshots/` with these names; the table renders them once they are added.
+**Dashboard (KPIs and charts)**
+![Dashboard with KPIs and charts](docs/screenshots/01-dashboard.png)
 
-| Screen | File |
-| ------ | ---- |
-| Dashboard (KPIs and charts) | `docs/screenshots/dashboard.png` |
-| Inventory with stock status badges | `docs/screenshots/inventory.png` |
-| Purchase order detail with receipts | `docs/screenshots/purchase-order.png` |
-| Goods receipt form (partial delivery) | `docs/screenshots/receive-goods.png` |
-| Sales order refused for insufficient stock | `docs/screenshots/sales-order-short.png` |
-| Stock movement ledger | `docs/screenshots/movements.png` |
-| Alerts center | `docs/screenshots/alerts.png` |
-| Inventory Valuation report | `docs/screenshots/report-valuation.png` |
-| Audit log with changed fields | `docs/screenshots/audit-log.png` |
-| Mobile view (sidebar open) | `docs/screenshots/mobile.png` |
+**Inventory with stock status badges**
+![Inventory with stock status badges](docs/screenshots/02-inventory-status.png)
+
+**Purchase order detail with receipts**
+![Purchase order detail with receipts](docs/screenshots/03-purchase-order-receipt.png)
+
+**Goods receipt form (partial delivery)**
+![Goods receipt form for a partial delivery](docs/screenshots/04-partial-receive-form.png)
+
+**Shipment refused for insufficient stock**
+![Shipment refused for insufficient stock](docs/screenshots/05-shipment-insufficient-stock.png)
+
+**Stock movement ledger with a reversal**
+![Stock movement ledger with a reversal](docs/screenshots/06-ledger-reversal.png)
+
+**Alerts center**
+![Alerts center](docs/screenshots/07-alerts-center.png)
+
+**Inventory Valuation report**
+![Inventory Valuation report](docs/screenshots/08-inventory-valuation.png)
+
+**Audit log with old and new values**
+![Audit log with old and new values](docs/screenshots/09-audit-log-old-new.png)
+
+**Mobile view**
+![Mobile view](docs/screenshots/10-mobile-view.png)
 
 ## Running locally
 
