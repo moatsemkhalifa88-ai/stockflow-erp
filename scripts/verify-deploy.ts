@@ -5,7 +5,7 @@
  *   npm run verify:deploy -- https://your-app.vercel.app
  *   (or set VERIFY_BASE_URL; the default is http://localhost:3000)
  *
- * Checks, per demo user: sign-in lands on the dashboard, the KPIs hold real
+ * Checks the one-tap demo card sign-in, then, per demo user: email/password sign-in lands on the dashboard, the KPIs hold real
  * numbers, key pages render without an error boundary or a streamed server
  * error, and the browser console stays clean. Then it scans every HTML and JS
  * file the browser loaded for server-only secrets: their variable names, and
@@ -92,9 +92,35 @@ async function main(): Promise<void> {
       const response = await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
       const onLogin = new URL(page.url()).pathname === "/login";
       const hasForm = (await page.getByLabel("Email").count()) > 0 && (await page.getByLabel("Password").count()) > 0;
+      const demoCards = await page.getByRole("button", { name: /^Sign in as / }).count();
       const problem = await pageProblem(page, false);
-      record("root loads and shows the login page", (response?.ok() ?? false) && onLogin && hasForm && !problem, `HTTP ${response?.status()}, at ${new URL(page.url()).pathname}${problem ? `, ${problem}` : ""}`);
+      record(
+        "root loads and shows the login page",
+        (response?.ok() ?? false) && onLogin && hasForm && demoCards > 0 && !problem,
+        `HTTP ${response?.status()}, at ${new URL(page.url()).pathname}, ${demoCards} demo account cards${problem ? `, ${problem}` : ""}`,
+      );
       record("login page console clean", consoleErrors.length === 0, consoleErrors.length ? "listed below" : "");
+      await context.close();
+    }
+
+    // 2a. One-tap demo sign-in (the first card; the server holds the credentials).
+    {
+      const context = await browser.newContext();
+      const page = await context.newPage();
+      attach(page, "demo card");
+      const errorsBefore = consoleErrors.length;
+      await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
+      const card = page.getByRole("button", { name: /^Sign in as / }).first();
+      const name = (await card.getAttribute("aria-label")) ?? "";
+      await card.click();
+      const signedIn = await page
+        .waitForURL((url) => url.pathname === "/dashboard", { timeout: 30_000 })
+        .then(() => true)
+        .catch(() => false);
+      await page.waitForLoadState("networkidle");
+      const problem = signedIn ? await pageProblem(page) : `still at ${new URL(page.url()).pathname}`;
+      const newErrors = consoleErrors.length - errorsBefore;
+      record(`one-tap demo card lands on the dashboard (${name.replace(/^Sign in as /, "")})`, signedIn && problem === null && newErrors === 0, problem ?? (newErrors ? `${newErrors} console error(s)` : ""));
       await context.close();
     }
 
@@ -104,12 +130,14 @@ async function main(): Promise<void> {
       const page = await context.newPage();
       attach(page, label);
 
-      // 2. Sign in.
+      // 2. Sign in with email and password (the form sits behind "Sign in with your own account").
       const errorsBefore = consoleErrors.length;
       await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
+      const toggle = page.getByRole("button", { name: "Sign in with your own account" });
+      if ((await toggle.count()) > 0) await toggle.click();
       await page.getByLabel("Email").fill(email);
       await page.getByLabel("Password").fill(PASSWORD);
-      await page.getByRole("button", { name: /sign in/i }).click();
+      await page.getByRole("button", { name: "Sign in", exact: true }).click();
       const signedIn = await page
         .waitForURL((url) => url.pathname === "/dashboard", { timeout: 30_000 })
         .then(() => true)

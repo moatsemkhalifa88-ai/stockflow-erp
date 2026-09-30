@@ -529,6 +529,11 @@ all demo stock has a complete ledger and audit trail.
 
 Password for all accounts: `StockFlow!2026` (override with `DEMO_USER_PASSWORD`).
 
+The sign-in page opens on **Choose a demo account**: one tap signs in as any of these users, no typing. The
+browser only sends which card was tapped; the emails and password stay on the server
+(`src/lib/auth/demo-credentials.ts`, a server-only module). The normal email/password form is under
+*Sign in with your own account*.
+
 | Email | Role |
 | ----- | ---- |
 | `admin@stockflow.example` | Administrator |

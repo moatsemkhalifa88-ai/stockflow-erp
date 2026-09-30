@@ -38,7 +38,6 @@ export function LoginForm({ next, signedOut }: { next?: string; signedOut: boole
         defaultValue={state.email}
         error={state.fieldErrors?.email}
         required
-        autoFocus
       />
       <FormField
         id="password"

@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isDemoAccountKey } from "./demo-accounts";
+import { DEMO_ACCOUNT_EMAILS, demoPassword } from "./demo-credentials";
 
 export interface SignInState {
   error?: string;
@@ -12,7 +14,7 @@ export interface SignInState {
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 /** Only allow redirects to same-origin relative paths. */
-function safeRedirectPath(value: FormDataEntryValue | null): string {
+function safeRedirectPath(value: unknown): string {
   if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) {
     return "/dashboard";
   }
@@ -42,6 +44,27 @@ export async function signIn(_prev: SignInState, formData: FormData): Promise<Si
   }
 
   redirect(safeRedirectPath(formData.get("next")));
+}
+
+export type DemoSignInResult = { ok: true; redirectTo: string } | { ok: false; error: string };
+
+/**
+ * One-tap sign-in for the demo accounts. The browser sends only which account
+ * was tapped; the email and password never leave the server. Returns instead of
+ * redirecting so the page can finish its exit animation before navigating.
+ */
+export async function signInAsDemo(key: string, next?: string): Promise<DemoSignInResult> {
+  const failed: DemoSignInResult = { ok: false, error: "Couldn't sign in — try again" };
+  if (!isDemoAccountKey(key)) return failed;
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email: DEMO_ACCOUNT_EMAILS[key], password: demoPassword() });
+  if (error) {
+    // The reason goes to the server log only; the visitor gets the generic message.
+    console.error(`Demo sign-in failed for ${key}: ${error.code ?? error.message}`);
+    return failed;
+  }
+  return { ok: true, redirectTo: safeRedirectPath(next) };
 }
 
 export async function signOut(): Promise<void> {

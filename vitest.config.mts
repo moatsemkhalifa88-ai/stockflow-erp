@@ -3,7 +3,11 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {
-    alias: { "@": path.resolve(import.meta.dirname, "src") },
+    alias: {
+      "@": path.resolve(import.meta.dirname, "src"),
+      // Tests are server code: resolve "server-only" the way the React server build does.
+      "server-only": path.resolve(import.meta.dirname, "node_modules/server-only/empty.js"),
+    },
   },
   test: {
     environment: "node",
